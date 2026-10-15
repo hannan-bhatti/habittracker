@@ -3,6 +3,7 @@ import { UserCheck, Sparkles, Plus, Award, Quote, CheckCircle2 } from 'lucide-re
 import type { IdentitySummary } from '../../types/habit';
 import { DEFAULT_IDENTITY_QUOTE } from '../../constants/identities';
 import { triggerHaptic } from '../../utils/haptics';
+import { DailyHabitTrackerLogo } from '../DailyHabitTrackerLogo';
 
 interface IdentityTabProps {
   identities: IdentitySummary[];
@@ -35,13 +36,16 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
       {/* Inspirational Identity Header Banner */}
       <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-teal-900 via-slate-900 to-sky-950 text-white border border-teal-500/30 shadow-md">
         <div className="relative z-10 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30">
-              <UserCheck className="w-4 h-4" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-300">
-              Identity-Based Habit System
-            </span>
+          <div className="flex items-center gap-3">
+            <DailyHabitTrackerLogo size={36} />
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-300 block">
+                Atomic Habit System
+              </span>
+              <span className="text-xs font-bold text-slate-200">
+                Identity-Based Habit Architecture
+              </span>
+            </div>
           </div>
 
           <div className="flex items-start gap-3 max-w-3xl">
