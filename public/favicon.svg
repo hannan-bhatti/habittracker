@@ -1,32 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" fill="none">
   <defs>
-    <linearGradient id="orbitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0d9488" />
-      <stop offset="50%" stop-color="#0284c7" />
-      <stop offset="100%" stop-color="#38bdf8" />
+    <pattern
+      id="favGridPattern"
+      width="6"
+      height="6"
+      patternUnits="userSpaceOnUse"
+      patternTransform="rotate(45 0 0)"
+    >
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#e2e8f0" stroke-width="0.75" />
+      <line x1="0" y1="0" x2="6" y2="0" stroke="#e2e8f0" stroke-width="0.75" />
+    </pattern>
+    <linearGradient id="favBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
     </linearGradient>
-    <linearGradient id="flameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0d9488" />
-      <stop offset="50%" stop-color="#0ea5e9" />
-      <stop offset="100%" stop-color="#38bdf8" />
-    </linearGradient>
-    <filter id="tabGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#0284c7" flood-opacity="0.2"/>
-    </filter>
   </defs>
 
-  <!-- High-contrast squircle base for browser tabs -->
-  <rect x="3" y="3" width="58" height="58" rx="16" fill="#ffffff" stroke="url(#orbitGrad)" stroke-width="2.5" filter="url(#tabGlow)"/>
+  <!-- Circular Badge -->
+  <circle cx="28" cy="28" r="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" />
+  <circle cx="28" cy="28" r="25.4" fill="url(#favGridPattern)" opacity="0.8" />
 
-  <!-- Outer Orbit Loop Arc (280 degrees) -->
-  <path d="M 32 13 A 19 19 0 1 1 16 41" stroke="url(#orbitGrad)" stroke-width="4.2" stroke-linecap="round" />
-
-  <!-- Progress Milestone Beads on the arc -->
-  <circle cx="32" cy="13" r="3.2" fill="#0d9488" />
-  <circle cx="51" cy="32" r="3.2" fill="#0284c7" />
-  <circle cx="16" cy="41" r="3.2" fill="#38bdf8" />
-
-  <!-- Inner Momentum Core Droplet / Spark -->
-  <path d="M 32 23 C 35.5 27.5, 39 30, 39 34.5 C 39 38.4, 35.9 41.5, 32 41.5 C 28.1 41.5, 25 38.4, 25 34.5 C 25 30.5, 28.5 27.5, 32 23 Z" fill="url(#flameGrad)" />
-  <circle cx="32" cy="35.5" r="2.2" fill="#ffffff" />
+  <!-- Dual-T Geometric Monogram -->
+  <polygon
+    points="17.5,22.1 14.7,25.2 21.2,31.7 18.4,35.1 21.2,37.6 24.3,34.8 31.1,41.3 33.9,38.5"
+    fill="url(#favBlueGrad)"
+  />
+  <polygon
+    points="24.0,15.6 21.2,18.4 37.6,34.8 40.4,31.7 33.9,25.2 40.7,18.4 37.6,15.3 30.8,22.1"
+    fill="url(#favBlueGrad)"
+  />
 </svg>

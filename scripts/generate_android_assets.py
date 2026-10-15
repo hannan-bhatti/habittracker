@@ -25,8 +25,8 @@ def render_html_to_png(html_content, output_path, width, height):
         os.remove(temp_html)
 
 def generate_assets():
-    print("Generating Master Launcher Icon...")
-    # Master Launcher Icon HTML (Square Squircle)
+    print("Generating Master Launcher Icon with user's circular grid logo...")
+    # Master Circular Launcher Icon HTML
     icon_html = """<!DOCTYPE html>
 <html>
 <head>
@@ -41,49 +41,46 @@ def generate_assets():
     justify-content: center;
     background: transparent;
   }
-  .icon-wrapper {
-    width: 820px;
-    height: 820px;
-    border-radius: 240px;
+  .circle-badge {
+    width: 860px;
+    height: 860px;
+    border-radius: 50%;
     background: #ffffff;
-    box-shadow: 0 24px 64px rgba(2, 132, 199, 0.22), 0 8px 24px rgba(13, 148, 136, 0.15);
-    border: 18px solid rgba(13, 148, 136, 0.35);
+    box-shadow: 0 20px 60px rgba(66, 165, 245, 0.22), 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 8px solid #cbd5e1;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    overflow: hidden;
   }
 </style>
 </head>
 <body>
-  <div class="icon-wrapper">
-    <svg width="620" height="620" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <div class="circle-badge">
+    <svg width="860" height="860" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="dhtLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#0d9488" />
-          <stop offset="50%" stop-color="#0284c7" />
-          <stop offset="100%" stop-color="#38bdf8" />
-        </linearGradient>
-        <linearGradient id="dhtFlameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#0d9488" />
-          <stop offset="50%" stop-color="#0ea5e9" />
-          <stop offset="100%" stop-color="#38bdf8" />
+        <pattern id="gridPattern" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="1.2" />
+          <line x1="0" y1="0" x2="10" y2="0" stroke="#e2e8f0" stroke-width="1.2" />
+        </pattern>
+        <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#60a5fa" />
+          <stop offset="50%" stop-color="#38bdf8" />
+          <stop offset="100%" stop-color="#0284c7" />
         </linearGradient>
       </defs>
-      <!-- Outer Habit Loop Arc -->
-      <path d="M 28 10 A 18 18 0 1 1 13 36" stroke="url(#dhtLogoGrad)" stroke-width="3.8" stroke-linecap="round" />
-      <circle cx="28" cy="10" r="3.2" fill="#0d9488" />
-      <circle cx="46" cy="28" r="3.2" fill="#0284c7" />
-      <circle cx="13" cy="36" r="3.2" fill="#38bdf8" />
-      <!-- Inner Momentum Core -->
-      <path d="M 28 19 C 31.5 23.5, 35 26, 35 30.5 C 35 34.3, 31.8 37, 28 37 C 24.2 37, 21 34.3, 21 30.5 C 21 26.5, 24.5 23.5, 28 19 Z" fill="url(#dhtFlameGrad)" />
-      <circle cx="28" cy="31.5" r="2.1" fill="#ffffff" />
+      <rect width="100" height="100" fill="url(#gridPattern)" opacity="0.85" />
+      <g transform="translate(50,50) scale(1.15) translate(-50,-50)">
+        <polygon points="21.6,34.2 14.1,42.5 31.6,60.0 24.1,69.2 31.6,75.8 39.9,68.3 58.3,85.8 65.8,78.3" fill="url(#blueGrad)" />
+        <polygon points="39.1,16.7 31.6,24.2 75.8,68.3 83.3,60.0 65.8,42.5 84.1,24.2 75.8,15.8 57.4,34.2" fill="url(#blueGrad)" />
+      </g>
     </svg>
   </div>
 </body>
 </html>"""
 
-    # Master Foreground Icon (for adaptive icons, centered in 1024x1024 canvas)
+    # Master Foreground Icon (Centered in 1024x1024 adaptive icon canvas)
     foreground_html = """<!DOCTYPE html>
 <html>
 <head>
@@ -98,94 +95,40 @@ def generate_assets():
     justify-content: center;
     background: transparent;
   }
-  .icon-wrapper {
-    width: 600px;
-    height: 600px;
-    border-radius: 175px;
-    background: #ffffff;
-    box-shadow: 0 16px 48px rgba(2, 132, 199, 0.25);
-    border: 14px solid rgba(13, 148, 136, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-</style>
-</head>
-<body>
-  <div class="icon-wrapper">
-    <svg width="450" height="450" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="dhtLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#0d9488" />
-          <stop offset="50%" stop-color="#0284c7" />
-          <stop offset="100%" stop-color="#38bdf8" />
-        </linearGradient>
-        <linearGradient id="dhtFlameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#0d9488" />
-          <stop offset="50%" stop-color="#0ea5e9" />
-          <stop offset="100%" stop-color="#38bdf8" />
-        </linearGradient>
-      </defs>
-      <path d="M 28 10 A 18 18 0 1 1 13 36" stroke="url(#dhtLogoGrad)" stroke-width="3.8" stroke-linecap="round" />
-      <circle cx="28" cy="10" r="3.2" fill="#0d9488" />
-      <circle cx="46" cy="28" r="3.2" fill="#0284c7" />
-      <circle cx="13" cy="36" r="3.2" fill="#38bdf8" />
-      <path d="M 28 19 C 31.5 23.5, 35 26, 35 30.5 C 35 34.3, 31.8 37, 28 37 C 24.2 37, 21 34.3, 21 30.5 C 21 26.5, 24.5 23.5, 28 19 Z" fill="url(#dhtFlameGrad)" />
-      <circle cx="28" cy="31.5" r="2.1" fill="#ffffff" />
-    </svg>
-  </div>
-</body>
-</html>"""
-
-    # Master Round Icon
-    round_html = """<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    width: 1024px;
-    height: 1024px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-  }
-  .icon-wrapper {
-    width: 860px;
-    height: 860px;
+  .circle-badge {
+    width: 660px;
+    height: 660px;
     border-radius: 50%;
     background: #ffffff;
-    box-shadow: 0 24px 64px rgba(2, 132, 199, 0.22);
-    border: 20px solid rgba(13, 148, 136, 0.35);
+    box-shadow: 0 16px 48px rgba(66, 165, 245, 0.25);
+    border: 6px solid #cbd5e1;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
   }
 </style>
 </head>
 <body>
-  <div class="icon-wrapper">
-    <svg width="600" height="600" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <div class="circle-badge">
+    <svg width="660" height="660" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="dhtLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#0d9488" />
-          <stop offset="50%" stop-color="#0284c7" />
-          <stop offset="100%" stop-color="#38bdf8" />
-        </linearGradient>
-        <linearGradient id="dhtFlameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#0d9488" />
-          <stop offset="50%" stop-color="#0ea5e9" />
-          <stop offset="100%" stop-color="#38bdf8" />
+        <pattern id="gridPatternFg" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="1.2" />
+          <line x1="0" y1="0" x2="10" y2="0" stroke="#e2e8f0" stroke-width="1.2" />
+        </pattern>
+        <linearGradient id="blueGradFg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#60a5fa" />
+          <stop offset="50%" stop-color="#38bdf8" />
+          <stop offset="100%" stop-color="#0284c7" />
         </linearGradient>
       </defs>
-      <path d="M 28 10 A 18 18 0 1 1 13 36" stroke="url(#dhtLogoGrad)" stroke-width="3.8" stroke-linecap="round" />
-      <circle cx="28" cy="10" r="3.2" fill="#0d9488" />
-      <circle cx="46" cy="28" r="3.2" fill="#0284c7" />
-      <circle cx="13" cy="36" r="3.2" fill="#38bdf8" />
-      <path d="M 28 19 C 31.5 23.5, 35 26, 35 30.5 C 35 34.3, 31.8 37, 28 37 C 24.2 37, 21 34.3, 21 30.5 C 21 26.5, 24.5 23.5, 28 19 Z" fill="url(#dhtFlameGrad)" />
-      <circle cx="28" cy="31.5" r="2.1" fill="#ffffff" />
+      <rect width="100" height="100" fill="url(#gridPatternFg)" opacity="0.85" />
+      <g transform="translate(50,50) scale(1.15) translate(-50,-50)">
+        <polygon points="21.6,34.2 14.1,42.5 31.6,60.0 24.1,69.2 31.6,75.8 39.9,68.3 58.3,85.8 65.8,78.3" fill="url(#blueGradFg)" />
+        <polygon points="39.1,16.7 31.6,24.2 75.8,68.3 83.3,60.0 65.8,42.5 84.1,24.2 75.8,15.8 57.4,34.2" fill="url(#blueGradFg)" />
+      </g>
     </svg>
   </div>
 </body>
@@ -193,15 +136,12 @@ def generate_assets():
 
     master_icon_path = os.path.join(BASE_DIR, "master_icon.png")
     master_fg_path = os.path.join(BASE_DIR, "master_fg.png")
-    master_round_path = os.path.join(BASE_DIR, "master_round.png")
 
     render_html_to_png(icon_html, master_icon_path, 1024, 1024)
     render_html_to_png(foreground_html, master_fg_path, 1024, 1024)
-    render_html_to_png(round_html, master_round_path, 1024, 1024)
 
     im_icon = Image.open(master_icon_path)
     im_fg = Image.open(master_fg_path)
-    im_round = Image.open(master_round_path)
 
     # Launcher sizes
     mipmap_sizes = {
@@ -218,23 +158,23 @@ def generate_assets():
         # ic_launcher.png
         im_icon.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(os.path.join(target_dir, "ic_launcher.png"))
         # ic_launcher_round.png
-        im_round.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(os.path.join(target_dir, "ic_launcher_round.png"))
+        im_icon.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(os.path.join(target_dir, "ic_launcher_round.png"))
         # ic_launcher_foreground.png
         im_fg.resize((fg_sz, fg_sz), Image.Resampling.LANCZOS).save(os.path.join(target_dir, "ic_launcher_foreground.png"))
         print(f"Generated launcher icons in {folder} ({icon_sz}x{icon_sz}, fg {fg_sz}x{fg_sz})")
 
     # Clean master files
-    for p in [master_icon_path, master_fg_path, master_round_path]:
+    for p in [master_icon_path, master_fg_path]:
         if os.path.exists(p): os.remove(p)
 
-    print("\nGenerating Splash Screens...")
-    # Splash Screen Template (Portrait & Landscape)
+    print("\nGenerating Splash Screens matching screenshot...")
+    # Splash Screen Template (Clean background, circular grid badge, dual-T icon, and title)
     def create_splash_html(width, height):
-        # Responsive scale based on height/width
         min_dim = min(width, height)
-        logo_size = int(min_dim * 0.38)
-        title_size = max(24, int(min_dim * 0.08))
-        sub_size = max(11, int(min_dim * 0.032))
+        badge_size = int(min_dim * 0.42)
+        title_size = max(24, int(min_dim * 0.075))
+        sub_size = max(11, int(min_dim * 0.03))
+        
         return f"""<!DOCTYPE html>
 <html>
 <head>
@@ -247,7 +187,7 @@ def generate_assets():
   body {{
     width: {width}px;
     height: {height}px;
-    background: #ffffff;
+    background: #f4f3f8;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -256,14 +196,6 @@ def generate_assets():
     position: relative;
     overflow: hidden;
   }}
-  .ambient-glow {{
-    position: absolute;
-    width: {int(logo_size * 2.2)}px;
-    height: {int(logo_size * 2.2)}px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, rgba(2, 132, 199, 0.06) 50%, transparent 75%);
-    pointer-events: none;
-  }}
   .brand-card {{
     display: flex;
     flex-direction: column;
@@ -271,26 +203,28 @@ def generate_assets():
     justify-content: center;
     z-index: 10;
   }}
-  .logo-box {{
-    width: {logo_size}px;
-    height: {logo_size}px;
-    border-radius: {int(logo_size * 0.28)}px;
+  .circle-badge {{
+    width: {badge_size}px;
+    height: {badge_size}px;
+    border-radius: 50%;
     background: #ffffff;
-    border: {max(2, int(logo_size * 0.025))}px solid rgba(13, 148, 136, 0.35);
-    box-shadow: 0 {int(logo_size * 0.08)}px {int(logo_size * 0.2)}px rgba(2, 132, 199, 0.16);
+    border: {max(2, int(badge_size * 0.015))}px solid #cbd5e1;
+    box-shadow: 0 {int(badge_size * 0.08)}px {int(badge_size * 0.22)}px rgba(66, 165, 245, 0.18), 0 4px 12px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: {int(min_dim * 0.045)}px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: {int(min_dim * 0.05)}px;
   }}
   .title {{
     font-size: {title_size}px;
     font-weight: 800;
     letter-spacing: -0.025em;
-    background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: {int(min_dim * 0.015)}px;
+    margin-bottom: {int(min_dim * 0.012)}px;
     text-align: center;
   }}
   .subtitle {{
@@ -304,28 +238,25 @@ def generate_assets():
 </style>
 </head>
 <body>
-  <div class="ambient-glow"></div>
   <div class="brand-card">
-    <div class="logo-box">
-      <svg width="{int(logo_size * 0.72)}" height="{int(logo_size * 0.72)}" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div class="circle-badge">
+      <svg width="{badge_size}" height="{badge_size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="dhtLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#0d9488" />
-            <stop offset="50%" stop-color="#0284c7" />
-            <stop offset="100%" stop-color="#38bdf8" />
-          </linearGradient>
-          <linearGradient id="dhtFlameGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#0d9488" />
-            <stop offset="50%" stop-color="#0ea5e9" />
-            <stop offset="100%" stop-color="#38bdf8" />
+          <pattern id="splashGrid" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
+            <line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="1.2" />
+            <line x1="0" y1="0" x2="10" y2="0" stroke="#e2e8f0" stroke-width="1.2" />
+          </pattern>
+          <linearGradient id="splashBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa" />
+            <stop offset="50%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
           </linearGradient>
         </defs>
-        <path d="M 28 10 A 18 18 0 1 1 13 36" stroke="url(#dhtLogoGrad)" stroke-width="3.8" stroke-linecap="round" />
-        <circle cx="28" cy="10" r="3.2" fill="#0d9488" />
-        <circle cx="46" cy="28" r="3.2" fill="#0284c7" />
-        <circle cx="13" cy="36" r="3.2" fill="#38bdf8" />
-        <path d="M 28 19 C 31.5 23.5, 35 26, 35 30.5 C 35 34.3, 31.8 37, 28 37 C 24.2 37, 21 34.3, 21 30.5 C 21 26.5, 24.5 23.5, 28 19 Z" fill="url(#dhtFlameGrad)" />
-        <circle cx="28" cy="31.5" r="2.1" fill="#ffffff" />
+        <rect width="100" height="100" fill="url(#splashGrid)" opacity="0.85" />
+        <g transform="translate(50,50) scale(1.15) translate(-50,-50)">
+          <polygon points="21.6,34.2 14.1,42.5 31.6,60.0 24.1,69.2 31.6,75.8 39.9,68.3 58.3,85.8 65.8,78.3" fill="url(#splashBlueGrad)" />
+          <polygon points="39.1,16.7 31.6,24.2 75.8,68.3 83.3,60.0 65.8,42.5 84.1,24.2 75.8,15.8 57.4,34.2" fill="url(#splashBlueGrad)" />
+        </g>
       </svg>
     </div>
     <div class="title">Habit Tracker</div>
@@ -356,7 +287,7 @@ def generate_assets():
         render_html_to_png(html, target_path, w, h)
         print(f"Generated splash screen: {folder}/splash.png ({w}x{h})")
 
-    print("\nAll Android startup assets successfully generated!")
+    print("\nAll Android startup assets successfully updated with user's logo!")
 
 if __name__ == "__main__":
     generate_assets()
