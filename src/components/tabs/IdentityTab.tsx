@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserCheck, Sparkles, Plus, Award, Quote, CheckCircle2 } from 'lucide-react';
+import { UserCheck, Sparkles, Plus, Award, Quote, CheckCircle2, Trash2 } from 'lucide-react';
 import type { IdentitySummary } from '../../types/habit';
 import { DEFAULT_IDENTITY_QUOTE } from '../../constants/identities';
 import { triggerHaptic } from '../../utils/haptics';
@@ -9,12 +9,14 @@ interface IdentityTabProps {
   identities: IdentitySummary[];
   onOpenAddModalWithCategory: (catId: string, preselectedIdentity?: string) => void;
   onAddCustomIdentity?: (identity: string) => void;
+  onDeleteIdentity?: (identity: string) => void;
 }
 
 export const IdentityTab: React.FC<IdentityTabProps> = ({
   identities,
   onOpenAddModalWithCategory,
-  onAddCustomIdentity
+  onAddCustomIdentity,
+  onDeleteIdentity
 }) => {
   const [newIdentityText, setNewIdentityText] = useState('');
   const totalLifetimeVotes = identities.reduce((acc, curr) => acc + curr.totalVotes, 0);
@@ -169,9 +171,27 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
                         </h4>
                       </div>
 
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border shrink-0 ${tierBadgeColor}`}>
-                        {item.levelName}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border shrink-0 ${tierBadgeColor}`}>
+                          {item.levelName}
+                        </span>
+                        {onDeleteIdentity && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerHaptic('light');
+                              if (window.confirm(`Delete identity "${item.identity}"? Any habits linked to this identity will be unlinked.`)) {
+                                onDeleteIdentity(item.identity);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            title="Delete this identity"
+                            aria-label={`Delete identity ${item.identity}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Votes Progress Bar */}

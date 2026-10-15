@@ -45,7 +45,9 @@ import {
   saveDarkModeToStorage,
   getInitialHabits,
   loadCustomIdentitiesFromStorage,
-  saveCustomIdentitiesToStorage
+  saveCustomIdentitiesToStorage,
+  loadDeletedIdentitiesFromStorage,
+  saveDeletedIdentitiesToStorage
 } from './utils/storageUtils';
 
 import { Header } from './components/Header';
@@ -82,6 +84,7 @@ export default function App() {
   const [habits, setHabits] = useState<Habit[]>(() => loadHabitsFromStorage());
   const [dailyJournals, setDailyJournals] = useState<Record<string, string>>(() => loadJournalsFromStorage());
   const [customIdentities, setCustomIdentities] = useState<string[]>(() => loadCustomIdentitiesFromStorage());
+  const [deletedIdentities, setDeletedIdentities] = useState<string[]>(() => loadDeletedIdentitiesFromStorage());
   const [preselectedIdentity, setPreselectedIdentity] = useState<string>('');
 
   // Filter & Search
@@ -405,7 +408,7 @@ export default function App() {
     );
   };
 
-  // Custom Identities Handlers
+  // Identity Handlers (Custom & Pre-defined)
   const handleAddCustomIdentity = (identity: string) => {
     const trimmed = identity.trim();
     if (!trimmed) return;
@@ -415,17 +418,54 @@ export default function App() {
       saveCustomIdentitiesToStorage(next);
       return next;
     });
+    // If it was previously marked as deleted, unmark it
+    setDeletedIdentities((prev) => {
+      if (!prev.includes(trimmed)) return prev;
+      const next = prev.filter((id) => id !== trimmed);
+      saveDeletedIdentitiesToStorage(next);
+      return next;
+    });
     showToast(`Saved identity: "${trimmed}"`);
   };
 
-  const handleDeleteCustomIdentity = (identity: string) => {
+  const handleDeleteIdentity = (identity: string) => {
+    const trimmed = identity.trim();
+    if (!trimmed) return;
+
+    // 1. Add to deleted identities list (to hide from predefined suggestions)
+    setDeletedIdentities((prev) => {
+      if (prev.includes(trimmed)) return prev;
+      const next = [...prev, trimmed];
+      saveDeletedIdentitiesToStorage(next);
+      return next;
+    });
+
+    // 2. Remove from customIdentities list (if present)
     setCustomIdentities((prev) => {
-      const next = prev.filter((id) => id !== identity);
+      const next = prev.filter((id) => id !== trimmed);
       saveCustomIdentitiesToStorage(next);
       return next;
     });
-    showToast('Custom identity removed');
+
+    // 3. Unlink from any existing habits that held this identity
+    setHabits((prev) =>
+      prev.map((h) => (h.identity === trimmed ? { ...h, identity: undefined } : h))
+    );
+
+    // 4. Clear preselected identity if matching
+    if (preselectedIdentity === trimmed) {
+      setPreselectedIdentity('');
+    }
+
+    showToast(`Deleted identity: "${trimmed}"`);
   };
+
+  const handleRestoreDefaultIdentities = () => {
+    setDeletedIdentities([]);
+    saveDeletedIdentitiesToStorage([]);
+    showToast('Restored all default identity suggestions! ✨');
+  };
+
 
   // Habit CRUD
   const handleOpenAddModal = (catId?: string, identity?: string) => {
@@ -753,6 +793,7 @@ export default function App() {
             identities={identitySummaries}
             onOpenAddModalWithCategory={(catId, identity) => handleOpenAddModal(catId, identity)}
             onAddCustomIdentity={handleAddCustomIdentity}
+            onDeleteIdentity={handleDeleteIdentity}
           />
         )}
 
@@ -793,8 +834,11 @@ export default function App() {
         defaultCategory={selectedCategory === 'All' ? 'Fitness' : selectedCategory}
         initialIdentity={preselectedIdentity}
         customIdentities={customIdentities}
+        deletedIdentities={deletedIdentities}
         onAddCustomIdentity={handleAddCustomIdentity}
-        onDeleteCustomIdentity={handleDeleteCustomIdentity}
+        onDeleteCustomIdentity={handleDeleteIdentity}
+        onDeletePredefinedIdentity={handleDeleteIdentity}
+        onRestoreDefaultIdentities={handleRestoreDefaultIdentities}
       />
 
       <NotificationModal
@@ -810,12 +854,16 @@ export default function App() {
         onClose={() => setIsBackupModalOpen(false)}
         habits={habits}
         journals={dailyJournals}
-        onImportSuccess={(newHabits, newJournals, importedCustomIdentities) => {
+        onImportSuccess={(newHabits, newJournals, importedCustomIdentities, importedDeletedIdentities) => {
           setHabits(newHabits);
           setDailyJournals(newJournals);
           if (importedCustomIdentities && importedCustomIdentities.length > 0) {
             setCustomIdentities(importedCustomIdentities);
             saveCustomIdentitiesToStorage(importedCustomIdentities);
+          }
+          if (importedDeletedIdentities) {
+            setDeletedIdentities(importedDeletedIdentities);
+            saveDeletedIdentitiesToStorage(importedDeletedIdentities);
           }
         }}
         onResetDefaults={() => {
@@ -823,6 +871,10 @@ export default function App() {
           setDailyJournals({
             [getTodayDateKey()]: 'Fresh start with clear intentions and momentum.'
           });
+          setCustomIdentities([]);
+          saveCustomIdentitiesToStorage([]);
+          setDeletedIdentities([]);
+          saveDeletedIdentitiesToStorage([]);
         }}
         showToast={showToast}
       />

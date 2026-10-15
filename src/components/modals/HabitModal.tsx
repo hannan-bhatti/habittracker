@@ -31,8 +31,11 @@ interface HabitModalProps {
   defaultCategory?: string;
   initialIdentity?: string;
   customIdentities?: string[];
+  deletedIdentities?: string[];
   onAddCustomIdentity?: (identity: string) => void;
   onDeleteCustomIdentity?: (identity: string) => void;
+  onDeletePredefinedIdentity?: (identity: string) => void;
+  onRestoreDefaultIdentities?: () => void;
 }
 
 const COMMON_LOCATIONS = [
@@ -54,8 +57,11 @@ interface HabitFormContentProps {
   onSaveHabit: (habitData: Partial<Habit>) => void;
   initialIdentity?: string;
   customIdentities?: string[];
+  deletedIdentities?: string[];
   onAddCustomIdentity?: (identity: string) => void;
   onDeleteCustomIdentity?: (identity: string) => void;
+  onDeletePredefinedIdentity?: (identity: string) => void;
+  onRestoreDefaultIdentities?: () => void;
 }
 
 const HabitFormContent: React.FC<HabitFormContentProps> = ({
@@ -67,8 +73,11 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
   onSaveHabit,
   initialIdentity = '',
   customIdentities = [],
+  deletedIdentities = [],
   onAddCustomIdentity,
-  onDeleteCustomIdentity
+  onDeleteCustomIdentity,
+  onDeletePredefinedIdentity,
+  onRestoreDefaultIdentities
 }) => {
   // 3-Step Wizard Navigation State
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -102,10 +111,16 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
   const [formNote, setFormNote] = useState(editingHabit?.note || '');
   const [formError, setFormError] = useState('');
 
-  // Suggestions for identity based on current category
+  // Suggestions for identity based on current category, excluding any deleted presets
   const identitySuggestions = useMemo(() => {
-    return IDENTITY_PRESETS[formCategory] || IDENTITY_PRESETS['Personal'] || [];
-  }, [formCategory]);
+    const raw = IDENTITY_PRESETS[formCategory] || IDENTITY_PRESETS['Personal'] || [];
+    return raw.filter((s) => !deletedIdentities.includes(s));
+  }, [formCategory, deletedIdentities]);
+
+  const hasDeletedSuggestionsInCurrentCategory = useMemo(() => {
+    const raw = IDENTITY_PRESETS[formCategory] || IDENTITY_PRESETS['Personal'] || [];
+    return raw.some((s) => deletedIdentities.includes(s));
+  }, [formCategory, deletedIdentities]);
 
   // Prevent circular stacking: habit A cannot stack on habit B if B is stacked on A
   const availablePreviousHabits = useMemo(() => {
@@ -596,32 +611,78 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
 
               {/* Category Presets */}
               <div className="space-y-1.5 pt-1 border-t border-slate-200/60 dark:border-slate-800">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                  Suggestions for {formCategory}:
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                    Suggestions for {formCategory}:
+                  </span>
+                  {hasDeletedSuggestionsInCurrentCategory && onRestoreDefaultIdentities && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        onRestoreDefaultIdentities();
+                      }}
+                      className="text-[10px] font-bold text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
+                    >
+                      Restore defaults
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1">
-                  {identitySuggestions.map((suggestion) => {
-                    const isSelected = formIdentity === suggestion;
-                    return (
-                      <button
-                        type="button"
-                        key={suggestion}
-                        onClick={() => {
-                          setFormIdentity(suggestion);
-                          setFormError('');
-                          triggerHaptic('selection');
-                        }}
-                        className={`text-left text-xs p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-teal-50 dark:bg-teal-950/70 border-teal-500 font-bold text-teal-900 dark:text-teal-200 shadow-2xs'
-                            : 'bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 hover:border-teal-400'
-                        }`}
-                      >
-                        <span className="truncate">&ldquo;I am {suggestion}&rdquo;</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0 ml-1" />}
-                      </button>
-                    );
-                  })}
+                  {identitySuggestions.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 italic py-1">
+                      No suggestions remaining for {formCategory}. Write your own above!
+                    </p>
+                  ) : (
+                    identitySuggestions.map((suggestion) => {
+                      const isSelected = formIdentity === suggestion;
+                      return (
+                        <div
+                          key={suggestion}
+                          onClick={() => {
+                            setFormIdentity(suggestion);
+                            setFormError('');
+                            triggerHaptic('selection');
+                          }}
+                          className={`text-left text-xs p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
+                            isSelected
+                              ? 'bg-teal-50 dark:bg-teal-950/70 border-teal-500 font-bold text-teal-900 dark:text-teal-200 shadow-2xs'
+                              : 'bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 hover:border-teal-400'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 border ${
+                              isSelected ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 dark:border-slate-600'
+                            }`}>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </span>
+                            <span className="truncate">&ldquo;I am {suggestion}&rdquo;</span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {isSelected && <Check className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />}
+                            {onDeletePredefinedIdentity && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  triggerHaptic('light');
+                                  onDeletePredefinedIdentity(suggestion);
+                                  if (formIdentity === suggestion) {
+                                    setFormIdentity('');
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 rounded transition-colors cursor-pointer"
+                                title="Delete pre-defined suggestion"
+                                aria-label={`Delete suggestion ${suggestion}`}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -1025,8 +1086,11 @@ export const HabitModal: React.FC<HabitModalProps> = ({
   defaultCategory = 'Fitness',
   initialIdentity,
   customIdentities,
+  deletedIdentities,
   onAddCustomIdentity,
-  onDeleteCustomIdentity
+  onDeleteCustomIdentity,
+  onDeletePredefinedIdentity,
+  onRestoreDefaultIdentities
 }) => {
   if (!isOpen) return null;
 
@@ -1042,8 +1106,11 @@ export const HabitModal: React.FC<HabitModalProps> = ({
         onSaveHabit={onSaveHabit}
         initialIdentity={initialIdentity}
         customIdentities={customIdentities}
+        deletedIdentities={deletedIdentities}
         onAddCustomIdentity={onAddCustomIdentity}
         onDeleteCustomIdentity={onDeleteCustomIdentity}
+        onDeletePredefinedIdentity={onDeletePredefinedIdentity}
+        onRestoreDefaultIdentities={onRestoreDefaultIdentities}
       />
     </div>
   );

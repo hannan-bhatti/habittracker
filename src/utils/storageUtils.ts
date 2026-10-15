@@ -7,6 +7,7 @@ const STORAGE_KEY_JOURNALS = 'habit_tracker_v6_journals';
 const STORAGE_KEY_NOTIFS = 'habit_tracker_v6_notifs';
 const STORAGE_KEY_DARK = 'habit_dark_teal_v2';
 const STORAGE_KEY_CUSTOM_IDENTITIES = 'habit_tracker_custom_identities_v1';
+const STORAGE_KEY_DELETED_IDENTITIES = 'habit_tracker_deleted_identities_v1';
 
 export const INITIAL_NOTIFICATIONS: NotificationConfig = {
   enabled: true,
@@ -243,17 +244,47 @@ export function saveCustomIdentitiesToStorage(identities: string[]): void {
   }
 }
 
+export function loadDeletedIdentitiesFromStorage(): string[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_DELETED_IDENTITIES);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+      }
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveDeletedIdentitiesToStorage(identities: string[]): void {
+  try {
+    const clean = Array.from(new Set(identities.map((s) => s.trim()).filter(Boolean)));
+    localStorage.setItem(STORAGE_KEY_DELETED_IDENTITIES, JSON.stringify(clean));
+  } catch {
+    // Ignored
+  }
+}
+
 /**
  * Exports all user data as a JSON download file.
  */
-export function exportUserData(habits: Habit[], journals: Record<string, string>, customIdentities?: string[]) {
+export function exportUserData(
+  habits: Habit[],
+  journals: Record<string, string>,
+  customIdentities?: string[],
+  deletedIdentities?: string[]
+) {
   const data = {
     appName: 'HabitTracker',
     version: '2.0',
     exportedAt: new Date().toISOString(),
     habits,
     journals,
-    customIdentities: customIdentities || loadCustomIdentitiesFromStorage()
+    customIdentities: customIdentities || loadCustomIdentitiesFromStorage(),
+    deletedIdentities: deletedIdentities || loadDeletedIdentitiesFromStorage()
   };
 
   const jsonStr = JSON.stringify(data, null, 2);
@@ -275,6 +306,7 @@ export function parseImportData(rawJson: string): {
   habits: Habit[];
   journals: Record<string, string>;
   customIdentities?: string[];
+  deletedIdentities?: string[];
 } {
   const parsed = JSON.parse(rawJson);
   if (!parsed || !Array.isArray(parsed.habits)) {
@@ -305,5 +337,11 @@ export function parseImportData(rawJson: string): {
       ? parsed.customIdentities.filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0)
       : [];
 
-  return { habits, journals, customIdentities };
+  const deletedIdentities: string[] =
+    Array.isArray(parsed.deletedIdentities)
+      ? parsed.deletedIdentities.filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0)
+      : [];
+
+  return { habits, journals, customIdentities, deletedIdentities };
 }
+
