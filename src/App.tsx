@@ -552,7 +552,7 @@ export default function App() {
           const [mH, mM] = notifications.morningTime.split(':').map(Number);
           list.push({
             id: 101,
-            title: 'Daily Habit Momentum ☀️',
+            title: 'Habit Tracker ☀️',
             body: 'A fresh day has begun. Check off your morning routines!',
             schedule: { on: { hour: mH, minute: mM }, repeats: true }
           });

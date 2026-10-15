@@ -48,8 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-teal-700 via-teal-600 to-sky-600 dark:from-teal-300 dark:via-teal-200 dark:to-sky-300 bg-clip-text text-transparent truncate">
-                Habit Momentum
+              <h1 className="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-teal-700 via-teal-600 to-sky-600 dark:from-teal-300 dark:via-teal-200 dark:to-sky-300 bg-clip-text text-transparent whitespace-nowrap">
+                Habit Tracker
               </h1>
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
                 Atomic Daily Loops
