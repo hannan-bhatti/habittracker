@@ -9,7 +9,8 @@ import {
   Edit3,
   Trash2,
   Search,
-  Plus
+  Plus,
+  Sparkles
 } from 'lucide-react';
 import type { Habit, EnrichedHabit, DayInfo, CategoryInfo } from '../types/habit';
 import { triggerHaptic } from '../utils/haptics';
@@ -200,6 +201,17 @@ export const HabitTable: React.FC<HabitTableProps> = ({
                                 </span>
                               )}
                             </div>
+
+                            {/* Aligned Identity Pill */}
+                            {h.identity && (
+                              <div
+                                className="inline-flex items-center gap-1 text-[10px] text-teal-700 dark:text-teal-300 bg-teal-50/90 dark:bg-teal-950/50 border border-teal-200/70 dark:border-teal-800/70 rounded-md px-1.5 py-0.5 truncate max-w-[240px]"
+                                title={`Aligned Identity: "${h.identity}"`}
+                              >
+                                <Sparkles className="w-2.5 h-2.5 shrink-0 text-amber-500" />
+                                <span className="truncate italic font-medium">&ldquo;{h.identity}&rdquo;</span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Action Buttons */}
@@ -259,8 +271,8 @@ export const HabitTable: React.FC<HabitTableProps> = ({
                         return (
                           <td key={d.dateStr} className="py-2 px-1 text-center relative">
                             {hasPop && (
-                              <span className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-full bg-teal-600 text-white text-[10px] font-extrabold animate-float-plus shadow-sm">
-                                +1
+                              <span className="pointer-events-none absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-full bg-teal-600 text-white text-[10px] font-extrabold animate-float-plus shadow-sm whitespace-nowrap">
+                                +1 Vote
                               </span>
                             )}
                             <button

@@ -4,6 +4,7 @@ export interface Habit {
   id: string;
   name: string;
   category: string;
+  identity?: string; // Identity Statement: "I am the type of person who..."
   targetPerWeek: number;
   priorStreak: number;
   bestStreakRecord: number;
@@ -22,11 +23,24 @@ export interface HabitStats {
   currentStreak: number;
   longestStreak: number;
   isTargetMet: boolean;
+  totalVotesCast: number; // Lifetime votes cast for this habit's identity
 }
 
 export interface EnrichedHabit extends Habit {
   stats: HabitStats;
   stackedAnchorHabit?: Habit;
+}
+
+export interface IdentitySummary {
+  identity: string;
+  category: string;
+  totalVotes: number;
+  weeklyVotes: number;
+  levelName: string;
+  levelTier: number; // 1 to 4
+  levelProgressPct: number;
+  nextTierVotes: number;
+  habits: EnrichedHabit[];
 }
 
 export interface DayInfo {

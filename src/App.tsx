@@ -5,7 +5,8 @@ import {
   Award,
   Layers,
   LayoutDashboard,
-  Calendar
+  Calendar,
+  UserCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -28,7 +29,11 @@ import {
 } from './utils/dateUtils';
 import { triggerHaptic } from './utils/haptics';
 import { playCompletionChime, playUncheckTone } from './utils/soundUtils';
-import { calculateHabitStats, calculateOverallDailyStreak } from './utils/streakUtils';
+import {
+  calculateHabitStats,
+  calculateOverallDailyStreak,
+  calculateIdentitySummaries
+} from './utils/streakUtils';
 import {
   loadHabitsFromStorage,
   saveHabitsToStorage,
@@ -47,6 +52,7 @@ import { DashboardStats } from './components/DashboardStats';
 import { DailyReflectionCard } from './components/DailyReflectionCard';
 import { HabitTable } from './components/HabitTable';
 import { WeeklyChart } from './components/WeeklyChart';
+import { IdentityTab } from './components/tabs/IdentityTab';
 import { StacksTab } from './components/tabs/StacksTab';
 import { HeatmapTab } from './components/tabs/HeatmapTab';
 import { BadgesTab } from './components/tabs/BadgesTab';
@@ -63,8 +69,8 @@ export default function App() {
     return cfg.soundEnabled ?? true;
   });
 
-  // Active View Tab: 'dashboard' | 'stacks' | 'heatmap' | 'badges'
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stacks' | 'heatmap' | 'badges'>('dashboard');
+  // Active View Tab: 'dashboard' | 'identity' | 'stacks' | 'heatmap' | 'badges'
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'identity' | 'stacks' | 'heatmap' | 'badges'>('dashboard');
 
   // Multi-week navigation state
   const [weekOffset, setWeekOffset] = useState<number>(0);
@@ -182,6 +188,11 @@ export default function App() {
       stackedAnchorHabit: h.stackedOnHabitId ? habitMap.get(h.stackedOnHabitId) : undefined
     }));
   }, [habits, weekDays]);
+
+  // Identity Summaries aggregating votes per identity
+  const identitySummaries = useMemo(() => {
+    return calculateIdentitySummaries(enrichedHabits);
+  }, [enrichedHabits]);
 
   // Filtered Habits by category & search
   const filteredHabits = useMemo(() => {
@@ -364,7 +375,11 @@ export default function App() {
           triggerHaptic('success');
           playCompletionChime(soundEnabled);
           triggerCelebration();
-          showToast(`Checked off "${h.name}"`);
+          if (h.identity) {
+            showToast(`+1 Vote cast: "${h.identity}"`);
+          } else {
+            showToast(`Checked off "${h.name}"`);
+          }
 
           // Animation pop effect
           setPopEffects((pe) => ({ ...pe, [`${habitId}-${dateStr}`]: Date.now() }));
@@ -414,14 +429,15 @@ export default function App() {
                 location: habitData.location || h.location,
                 stackedOnHabitId: habitData.stackedOnHabitId,
                 targetPerWeek: habitData.targetPerWeek || h.targetPerWeek,
-                note: habitData.note !== undefined ? habitData.note : h.note
+                note: habitData.note !== undefined ? habitData.note : h.note,
+                identity: habitData.identity !== undefined ? habitData.identity : h.identity
               }
             : h
         )
       );
       showToast(`Updated "${habitData.name}"`);
     } else {
-      // Create new habit with empty completedDates (Fixes Bug 3: never auto-checks Wednesday!)
+      // Create new habit with empty completedDates
       const newHabit: Habit = {
         id: `h_${Date.now()}`,
         name: habitData.name || 'Untitled Habit',
@@ -433,6 +449,7 @@ export default function App() {
         priorStreak: 0,
         bestStreakRecord: 1,
         note: habitData.note || 'Small daily steps build lasting consistency',
+        identity: habitData.identity,
         completedDates: {},
         createdAt: new Date().toISOString()
       };
@@ -580,6 +597,22 @@ export default function App() {
             type="button"
             onClick={() => {
               triggerHaptic('selection');
+              setActiveTab('identity');
+            }}
+            className={`flex-1 inline-flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'identity'
+                ? 'bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>Identity Hub ({identitySummaries.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('selection');
               setActiveTab('stacks');
             }}
             className={`flex-1 inline-flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
@@ -685,6 +718,14 @@ export default function App() {
               isDarkMode={isDarkMode}
             />
           </div>
+        )}
+
+        {/* TAB 2: IDENTITY HUB */}
+        {activeTab === 'identity' && (
+          <IdentityTab
+            identities={identitySummaries}
+            onOpenAddModalWithCategory={(catId) => handleOpenAddModal(catId)}
+          />
         )}
 
         {/* TAB 2: HABIT STACKS */}

@@ -1,5 +1,6 @@
 import type { Habit, NotificationConfig } from '../types/habit';
 import { formatDateKey, getTodayDateKey, getWeekDates } from './dateUtils';
+import { IDENTITY_PRESETS } from '../constants/identities';
 
 const STORAGE_KEY_HABITS = 'habit_tracker_v6_habits';
 const STORAGE_KEY_JOURNALS = 'habit_tracker_v6_journals';
@@ -33,6 +34,7 @@ export function getInitialHabits(): Habit[] {
       id: 'h0',
       name: '5 Daily Prayers',
       category: 'Prayer',
+      identity: 'A devoted servant who grounds each day in prayer & presence',
       targetPerWeek: 7,
       priorStreak: 21,
       bestStreakRecord: 35,
@@ -46,6 +48,7 @@ export function getInitialHabits(): Habit[] {
       id: 'hp2',
       name: 'Morning & Evening Remembrance',
       category: 'Prayer',
+      identity: 'Someone who lives with peace, gratitude, and remembrance',
       targetPerWeek: 7,
       priorStreak: 12,
       bestStreakRecord: 20,
@@ -60,6 +63,7 @@ export function getInitialHabits(): Habit[] {
       id: 'h1',
       name: 'Morning Calisthenics & Movement',
       category: 'Fitness',
+      identity: 'An athlete who honors their body with daily strength & mobility',
       targetPerWeek: 5,
       priorStreak: 8,
       bestStreakRecord: 16,
@@ -73,6 +77,7 @@ export function getInitialHabits(): Habit[] {
       id: 'h2',
       name: 'Focused Study & Coding',
       category: 'Work & Study',
+      identity: 'A focused builder who crafts meaningful work with deep concentration',
       targetPerWeek: 6,
       priorStreak: 14,
       bestStreakRecord: 22,
@@ -87,6 +92,7 @@ export function getInitialHabits(): Habit[] {
       id: 'h3',
       name: 'Drink 8 Glasses of Water',
       category: 'Health',
+      identity: 'Someone who respects their body through pure hydration & vitality',
       targetPerWeek: 7,
       priorStreak: 18,
       bestStreakRecord: 25,
@@ -100,6 +106,7 @@ export function getInitialHabits(): Habit[] {
       id: 'h4',
       name: 'Sleep Before 11 PM',
       category: 'Health',
+      identity: 'Someone who prioritizes restorative sleep and high daily energy',
       targetPerWeek: 7,
       priorStreak: 5,
       bestStreakRecord: 12,
@@ -122,6 +129,10 @@ export function loadHabitsFromStorage(): Habit[] {
           id: h.id || `h_${Date.now()}_${idx}`,
           name: h.name || 'Untitled Habit',
           category: h.category || 'Fitness',
+          identity:
+            h.identity && !h.identity.startsWith('Someone aligned with ')
+              ? h.identity
+              : (h.category && IDENTITY_PRESETS[h.category]?.[0]) || 'A person committed to daily growth',
           targetPerWeek: Number(h.targetPerWeek) || 5,
           priorStreak: Number(h.priorStreak) || 0,
           bestStreakRecord: Number(h.bestStreakRecord) || 1,
@@ -132,51 +143,6 @@ export function loadHabitsFromStorage(): Habit[] {
           completedDates: h.completedDates || {},
           createdAt: h.createdAt || new Date().toISOString()
         }));
-      }
-    }
-
-    // Check for previous version (habit_teal_v5) and migrate
-    const oldSaved = localStorage.getItem('habit_teal_v5');
-    if (oldSaved) {
-      const oldList = JSON.parse(oldSaved);
-      if (Array.isArray(oldList) && oldList.length > 0) {
-        const currentWeek = getWeekDates(0);
-        return oldList.map((h: {
-          id?: string;
-          name?: string;
-          category?: string;
-          targetPerWeek?: number;
-          priorStreak?: number;
-          bestStreakRecord?: number;
-          note?: string;
-          time?: string;
-          location?: string;
-          stackedOnHabitId?: string;
-          weekLog?: boolean[];
-        }, idx: number) => {
-          const completedDates: Record<string, boolean> = {};
-          if (Array.isArray(h.weekLog)) {
-            h.weekLog.forEach((done, dIdx) => {
-              if (done && currentWeek[dIdx]) {
-                completedDates[currentWeek[dIdx].dateStr] = true;
-              }
-            });
-          }
-          return {
-            id: h.id || `h_${Date.now()}_${idx}`,
-            name: h.name || 'Untitled Habit',
-            category: h.category || 'Fitness',
-            targetPerWeek: Number(h.targetPerWeek) || 5,
-            priorStreak: Number(h.priorStreak) || 0,
-            bestStreakRecord: Number(h.bestStreakRecord) || 1,
-            note: h.note || '',
-            time: h.time || '07:00',
-            location: h.location || 'Home',
-            stackedOnHabitId: h.stackedOnHabitId || undefined,
-            completedDates,
-            createdAt: new Date().toISOString()
-          };
-        });
       }
     }
 
@@ -221,16 +187,6 @@ export function loadNotificationsFromStorage(): NotificationConfig {
     const saved = localStorage.getItem(STORAGE_KEY_NOTIFS);
     if (saved) return JSON.parse(saved);
 
-    const oldNotifs = localStorage.getItem('habit_notifs_teal_v2');
-    if (oldNotifs) {
-      const parsed = JSON.parse(oldNotifs);
-      return {
-        enabled: Boolean(parsed.enabled),
-        morningTime: parsed.morningTime || '07:00',
-        eveningTime: parsed.eveningTime || '21:30',
-        soundEnabled: true
-      };
-    }
     return INITIAL_NOTIFICATIONS;
   } catch {
     return INITIAL_NOTIFICATIONS;
@@ -299,6 +255,7 @@ export function parseImportData(rawJson: string): { habits: Habit[]; journals: R
     id: h.id || `h_${Date.now()}_${idx}`,
     name: String(h.name || 'Imported Habit'),
     category: String(h.category || 'Fitness'),
+    identity: h.identity ? String(h.identity) : undefined,
     targetPerWeek: Number(h.targetPerWeek) || 5,
     priorStreak: Number(h.priorStreak) || 0,
     bestStreakRecord: Number(h.bestStreakRecord) || 1,

@@ -6,9 +6,12 @@ import {
   MapPin,
   Link2,
   Search,
-  Flame
+  Flame,
+  UserCheck,
+  Sparkles
 } from 'lucide-react';
 import type { Habit, CategoryInfo } from '../../types/habit';
+import { IDENTITY_PRESETS } from '../../constants/identities';
 import { triggerHaptic } from '../../utils/haptics';
 
 interface HabitModalProps {
@@ -52,6 +55,10 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
   const [formCategory, setFormCategory] = useState(
     editingHabit ? editingHabit.category : defaultCategory
   );
+  const [formIdentity, setFormIdentity] = useState(
+    editingHabit?.identity ||
+      (IDENTITY_PRESETS[defaultCategory] ? IDENTITY_PRESETS[defaultCategory][0] : '')
+  );
   const [formTime, setFormTime] = useState(
     editingHabit ? editingHabit.time : defaultCategory === 'Prayer' ? '05:15' : '07:00'
   );
@@ -70,6 +77,11 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
   const [formTarget, setFormTarget] = useState(editingHabit?.targetPerWeek || 5);
   const [formNote, setFormNote] = useState(editingHabit?.note || '');
   const [formError, setFormError] = useState('');
+
+  // Suggestions for identity based on current category
+  const identitySuggestions = useMemo(() => {
+    return IDENTITY_PRESETS[formCategory] || IDENTITY_PRESETS['Personal'] || [];
+  }, [formCategory]);
 
   // Prevent circular stacking: habit A cannot stack on habit B if B is stacked on A
   const availablePreviousHabits = useMemo(() => {
@@ -172,6 +184,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
     onSaveHabit({
       name: formName.trim(),
       category: formCategory,
+      identity: formIdentity.trim() || undefined,
       time: formTime.trim(),
       location: formLocation.trim(),
       stackedOnHabitId: formStackedOn || undefined,
@@ -186,10 +199,10 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-            {editingHabit ? 'Edit Habit' : 'New Habit'}
+            {editingHabit ? 'Edit Habit & Identity' : 'New Habit & Identity'}
           </h3>
           <p className="text-[11px] text-slate-400">
-            Every lasting habit has a clear time, location, and anchor trigger.
+            Every habit is a vote for who you wish to become.
           </p>
         </div>
         <button
@@ -219,6 +232,60 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
           />
         </div>
 
+        {/* Identity Alignment Section */}
+        <div className="p-4 rounded-2xl border border-sky-300/80 dark:border-sky-800/80 bg-sky-50/30 dark:bg-sky-950/20 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center shadow-2xs">
+                <UserCheck className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-extrabold text-sky-950 dark:text-sky-200">
+                  Identity Alignment
+                </h4>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  Who do you become by practicing this routine?
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold text-sky-700 dark:text-sky-300 bg-sky-100/70 dark:bg-sky-900/60 px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-800 flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              Atomic Identity
+            </span>
+          </div>
+
+          <div className="relative">
+            <input
+              type="text"
+              value={formIdentity}
+              onChange={(e) => setFormIdentity(e.target.value)}
+              placeholder="e.g. An athlete who builds daily strength, A focused builder..."
+              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
+            />
+          </div>
+
+          {/* Quick Identity Preset Suggestions */}
+          <div className="space-y-1">
+            <span className="text-[10px] text-slate-400 block">Suggestions for {formCategory}:</span>
+            <div className="flex flex-col gap-1">
+              {identitySuggestions.map((suggestion) => (
+                <button
+                  type="button"
+                  key={suggestion}
+                  onClick={() => setFormIdentity(suggestion)}
+                  className={`text-left text-[11px] p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                    formIdentity === suggestion
+                      ? 'bg-sky-100 dark:bg-sky-900/60 border-sky-400 font-bold text-sky-900 dark:text-sky-200'
+                      : 'bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-750 text-slate-600 dark:text-slate-300 hover:border-sky-300'
+                  }`}
+                >
+                  &ldquo;I am {suggestion}&rdquo;
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Category Selection */}
         <div>
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -234,6 +301,9 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                   key={cat.id}
                   onClick={() => {
                     setFormCategory(cat.id);
+                    if (IDENTITY_PRESETS[cat.id] && (!formIdentity || identitySuggestions.includes(formIdentity))) {
+                      setFormIdentity(IDENTITY_PRESETS[cat.id][0]);
+                    }
                     if (cat.id === 'Prayer') {
                       setFormLocation('Prayer Rug / Mosque');
                       setFormTime('05:15');
