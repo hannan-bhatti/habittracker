@@ -10,7 +10,11 @@ interface BackupModalProps {
   onClose: () => void;
   habits: Habit[];
   journals: Record<string, string>;
-  onImportSuccess: (habits: Habit[], journals: Record<string, string>) => void;
+  onImportSuccess: (
+    habits: Habit[],
+    journals: Record<string, string>,
+    customIdentities?: string[]
+  ) => void;
   onResetDefaults: () => void;
   showToast: (msg: string) => void;
 }
@@ -45,9 +49,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
     reader.onload = (event) => {
       try {
         const rawJson = event.target?.result as string;
-        const { habits: importedHabits, journals: importedJournals } = parseImportData(rawJson);
+        const { habits: importedHabits, journals: importedJournals, customIdentities } = parseImportData(rawJson);
         triggerHaptic('success');
-        onImportSuccess(importedHabits, importedJournals);
+        onImportSuccess(importedHabits, importedJournals, customIdentities);
         showToast(`Imported ${importedHabits.length} habits successfully! 🎉`);
         onClose();
       } catch (err) {

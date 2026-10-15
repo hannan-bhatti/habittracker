@@ -117,17 +117,27 @@ export function calculateOverallDailyStreak(habits: Habit[]): number {
 /**
  * Groups habits by identity and calculates votes cast, tiers, and momentum levels.
  */
-export function calculateIdentitySummaries(habits: EnrichedHabit[]): IdentitySummary[] {
+export function calculateIdentitySummaries(
+  habits: EnrichedHabit[],
+  customIdentities: string[] = []
+): IdentitySummary[] {
   const map = new Map<string, { category: string; habits: EnrichedHabit[] }>();
 
   habits.forEach((h) => {
-    const idKey = h.identity && h.identity.trim().length > 0
-      ? h.identity.trim()
-      : `Someone aligned with ${h.category}`;
+    if (h.identity && h.identity.trim().length > 0) {
+      const idKey = h.identity.trim();
+      const existing = map.get(idKey) || { category: h.category, habits: [] };
+      existing.habits.push(h);
+      map.set(idKey, existing);
+    }
+  });
 
-    const existing = map.get(idKey) || { category: h.category, habits: [] };
-    existing.habits.push(h);
-    map.set(idKey, existing);
+  // Include custom user-defined identities that may not yet have habit routines attached
+  customIdentities.forEach((cid) => {
+    const trimmed = cid.trim();
+    if (trimmed && !map.has(trimmed)) {
+      map.set(trimmed, { category: 'Personal', habits: [] });
+    }
   });
 
   const summaries: IdentitySummary[] = [];

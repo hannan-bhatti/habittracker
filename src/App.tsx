@@ -43,7 +43,9 @@ import {
   saveNotificationsToStorage,
   loadDarkModeFromStorage,
   saveDarkModeToStorage,
-  getInitialHabits
+  getInitialHabits,
+  loadCustomIdentitiesFromStorage,
+  saveCustomIdentitiesToStorage
 } from './utils/storageUtils';
 
 import { Header } from './components/Header';
@@ -79,6 +81,8 @@ export default function App() {
   // Core Data
   const [habits, setHabits] = useState<Habit[]>(() => loadHabitsFromStorage());
   const [dailyJournals, setDailyJournals] = useState<Record<string, string>>(() => loadJournalsFromStorage());
+  const [customIdentities, setCustomIdentities] = useState<string[]>(() => loadCustomIdentitiesFromStorage());
+  const [preselectedIdentity, setPreselectedIdentity] = useState<string>('');
 
   // Filter & Search
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -189,10 +193,10 @@ export default function App() {
     }));
   }, [habits, weekDays]);
 
-  // Identity Summaries aggregating votes per identity
+  // Identity Summaries aggregating votes per identity (including custom-defined identities)
   const identitySummaries = useMemo(() => {
-    return calculateIdentitySummaries(enrichedHabits);
-  }, [enrichedHabits]);
+    return calculateIdentitySummaries(enrichedHabits, customIdentities);
+  }, [enrichedHabits, customIdentities]);
 
   // Filtered Habits by category & search
   const filteredHabits = useMemo(() => {
@@ -401,11 +405,34 @@ export default function App() {
     );
   };
 
+  // Custom Identities Handlers
+  const handleAddCustomIdentity = (identity: string) => {
+    const trimmed = identity.trim();
+    if (!trimmed) return;
+    setCustomIdentities((prev) => {
+      if (prev.includes(trimmed)) return prev;
+      const next = [trimmed, ...prev];
+      saveCustomIdentitiesToStorage(next);
+      return next;
+    });
+    showToast(`Saved identity: "${trimmed}"`);
+  };
+
+  const handleDeleteCustomIdentity = (identity: string) => {
+    setCustomIdentities((prev) => {
+      const next = prev.filter((id) => id !== identity);
+      saveCustomIdentitiesToStorage(next);
+      return next;
+    });
+    showToast('Custom identity removed');
+  };
+
   // Habit CRUD
-  const handleOpenAddModal = (catId?: string) => {
+  const handleOpenAddModal = (catId?: string, identity?: string) => {
     triggerHaptic('selection');
     setEditingHabit(null);
     if (catId && catId !== 'All') setSelectedCategory(catId);
+    setPreselectedIdentity(identity || '');
     setIsHabitModalOpen(true);
   };
 
@@ -724,7 +751,8 @@ export default function App() {
         {activeTab === 'identity' && (
           <IdentityTab
             identities={identitySummaries}
-            onOpenAddModalWithCategory={(catId) => handleOpenAddModal(catId)}
+            onOpenAddModalWithCategory={(catId, identity) => handleOpenAddModal(catId, identity)}
+            onAddCustomIdentity={handleAddCustomIdentity}
           />
         )}
 
@@ -754,12 +782,19 @@ export default function App() {
       {/* Modals */}
       <HabitModal
         isOpen={isHabitModalOpen}
-        onClose={() => setIsHabitModalOpen(false)}
+        onClose={() => {
+          setIsHabitModalOpen(false);
+          setPreselectedIdentity('');
+        }}
         onSaveHabit={handleSaveHabit}
         editingHabit={editingHabit}
         habits={habits}
         categories={CATEGORIES}
         defaultCategory={selectedCategory === 'All' ? 'Fitness' : selectedCategory}
+        initialIdentity={preselectedIdentity}
+        customIdentities={customIdentities}
+        onAddCustomIdentity={handleAddCustomIdentity}
+        onDeleteCustomIdentity={handleDeleteCustomIdentity}
       />
 
       <NotificationModal
@@ -775,9 +810,13 @@ export default function App() {
         onClose={() => setIsBackupModalOpen(false)}
         habits={habits}
         journals={dailyJournals}
-        onImportSuccess={(newHabits, newJournals) => {
+        onImportSuccess={(newHabits, newJournals, importedCustomIdentities) => {
           setHabits(newHabits);
           setDailyJournals(newJournals);
+          if (importedCustomIdentities && importedCustomIdentities.length > 0) {
+            setCustomIdentities(importedCustomIdentities);
+            saveCustomIdentitiesToStorage(importedCustomIdentities);
+          }
         }}
         onResetDefaults={() => {
           setHabits(getInitialHabits());

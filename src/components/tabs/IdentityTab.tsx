@@ -1,19 +1,34 @@
-import type React from 'react';
+import { useState } from 'react';
 import { UserCheck, Sparkles, Plus, Award, Quote, CheckCircle2 } from 'lucide-react';
 import type { IdentitySummary } from '../../types/habit';
 import { DEFAULT_IDENTITY_QUOTE } from '../../constants/identities';
+import { triggerHaptic } from '../../utils/haptics';
 
 interface IdentityTabProps {
   identities: IdentitySummary[];
-  onOpenAddModalWithCategory: (catId: string) => void;
+  onOpenAddModalWithCategory: (catId: string, preselectedIdentity?: string) => void;
+  onAddCustomIdentity?: (identity: string) => void;
 }
 
 export const IdentityTab: React.FC<IdentityTabProps> = ({
   identities,
-  onOpenAddModalWithCategory
+  onOpenAddModalWithCategory,
+  onAddCustomIdentity
 }) => {
+  const [newIdentityText, setNewIdentityText] = useState('');
   const totalLifetimeVotes = identities.reduce((acc, curr) => acc + curr.totalVotes, 0);
   const embodiedCount = identities.filter((i) => i.levelTier >= 4).length;
+
+  const handleCreateIdentity = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newIdentityText.trim();
+    if (!trimmed) return;
+    triggerHaptic('selection');
+    if (onAddCustomIdentity) {
+      onAddCustomIdentity(trimmed);
+    }
+    setNewIdentityText('');
+  };
 
   return (
     <div className="space-y-6">
@@ -57,6 +72,44 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
 
         {/* Ambient background blur */}
         <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-teal-500/10 blur-2xl pointer-events-none" />
+      </div>
+
+      {/* Define a New Identity Creator */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-teal-50 dark:bg-teal-950/70 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+            <Plus className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+              Define a New Identity
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Write the type of person you wish to become. You can then attach habits to build proof.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleCreateIdentity} className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={newIdentityText}
+            onChange={(e) => setNewIdentityText(e.target.value)}
+            placeholder='e.g. "An inspiring teacher who leads with patience", "A disciplined writer"...'
+            className="flex-1 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500"
+          />
+          <button
+            type="submit"
+            disabled={!newIdentityText.trim()}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              newIdentityText.trim()
+                ? 'bg-gradient-to-r from-teal-600 to-sky-600 text-white shadow-xs hover:brightness-105 active:scale-95'
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            + Save Identity
+          </button>
+        </form>
       </div>
 
       {/* Identity Pillars Grid */}
@@ -141,18 +194,24 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
                         Supporting Habit Loops ({item.habits.length})
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {item.habits.map((h) => (
-                          <span
-                            key={h.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300"
-                          >
-                            <CheckCircle2 className="w-3 h-3 text-teal-600 dark:text-teal-400" />
-                            <span>{h.name}</span>
-                            <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold ml-0.5">
-                              ({h.stats.totalVotesCast}v)
-                            </span>
+                        {item.habits.length === 0 ? (
+                          <span className="text-xs text-slate-400 italic">
+                            No habits attached yet. Click &ldquo;+ Add Habit&rdquo; below to start voting!
                           </span>
-                        ))}
+                        ) : (
+                          item.habits.map((h) => (
+                            <span
+                              key={h.id}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300"
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                              <span>{h.name}</span>
+                              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold ml-0.5">
+                                ({h.stats.totalVotesCast}v)
+                              </span>
+                            </span>
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>
@@ -164,7 +223,7 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
                     </span>
                     <button
                       type="button"
-                      onClick={() => onOpenAddModalWithCategory(item.category)}
+                      onClick={() => onOpenAddModalWithCategory(item.category, item.identity)}
                       className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />

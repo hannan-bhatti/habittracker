@@ -6,6 +6,7 @@ const STORAGE_KEY_HABITS = 'habit_tracker_v6_habits';
 const STORAGE_KEY_JOURNALS = 'habit_tracker_v6_journals';
 const STORAGE_KEY_NOTIFS = 'habit_tracker_v6_notifs';
 const STORAGE_KEY_DARK = 'habit_dark_teal_v2';
+const STORAGE_KEY_CUSTOM_IDENTITIES = 'habit_tracker_custom_identities_v1';
 
 export const INITIAL_NOTIFICATIONS: NotificationConfig = {
   enabled: true,
@@ -218,16 +219,41 @@ export function saveDarkModeToStorage(isDark: boolean) {
   }
 }
 
+export function loadCustomIdentitiesFromStorage(): string[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_CUSTOM_IDENTITIES);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+      }
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomIdentitiesToStorage(identities: string[]): void {
+  try {
+    const clean = Array.from(new Set(identities.map((s) => s.trim()).filter(Boolean)));
+    localStorage.setItem(STORAGE_KEY_CUSTOM_IDENTITIES, JSON.stringify(clean));
+  } catch {
+    // Ignored
+  }
+}
+
 /**
  * Exports all user data as a JSON download file.
  */
-export function exportUserData(habits: Habit[], journals: Record<string, string>) {
+export function exportUserData(habits: Habit[], journals: Record<string, string>, customIdentities?: string[]) {
   const data = {
     appName: 'HabitTracker',
     version: '2.0',
     exportedAt: new Date().toISOString(),
     habits,
-    journals
+    journals,
+    customIdentities: customIdentities || loadCustomIdentitiesFromStorage()
   };
 
   const jsonStr = JSON.stringify(data, null, 2);
@@ -245,7 +271,11 @@ export function exportUserData(habits: Habit[], journals: Record<string, string>
 /**
  * Validates and parses an imported JSON file string.
  */
-export function parseImportData(rawJson: string): { habits: Habit[]; journals: Record<string, string> } {
+export function parseImportData(rawJson: string): {
+  habits: Habit[];
+  journals: Record<string, string>;
+  customIdentities?: string[];
+} {
   const parsed = JSON.parse(rawJson);
   if (!parsed || !Array.isArray(parsed.habits)) {
     throw new Error('Invalid backup file: missing habits list.');
@@ -270,5 +300,10 @@ export function parseImportData(rawJson: string): { habits: Habit[]; journals: R
   const journals: Record<string, string> =
     parsed.journals && typeof parsed.journals === 'object' ? parsed.journals : {};
 
-  return { habits, journals };
+  const customIdentities: string[] =
+    Array.isArray(parsed.customIdentities)
+      ? parsed.customIdentities.filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0)
+      : [];
+
+  return { habits, journals, customIdentities };
 }
