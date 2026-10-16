@@ -17,6 +17,7 @@ interface BackupModalProps {
     deletedIdentities?: string[]
   ) => void;
   onResetDefaults: () => void;
+  onClearAllHabits: () => void;
   showToast: (msg: string) => void;
 }
 
@@ -27,10 +28,12 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   journals,
   onImportSuccess,
   onResetDefaults,
+  onClearAllHabits,
   showToast
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -136,12 +139,58 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             </div>
           )}
 
-          {/* Reset to Default Data */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+          {/* Habit Management Controls */}
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            {/* Clear All Habits Option */}
+            {confirmClearAll ? (
+              <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 space-y-2">
+                <p className="text-xs font-bold text-red-800 dark:text-red-200">
+                  Delete all current habits? (Your settings will remain)
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('warning');
+                      onClearAllHabits();
+                      setConfirmClearAll(false);
+                      onClose();
+                      showToast('All habits cleared.');
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-500 cursor-pointer"
+                  >
+                    Yes, Clear All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClearAll(false)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmClearAll(true);
+                    setConfirmReset(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 font-semibold cursor-pointer"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Clear all habits</span>
+                </button>
+              </div>
+            )}
+
+            {/* Reset to Default Template */}
             {confirmReset ? (
               <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-2">
                 <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
-                  Are you sure you want to restore template habits?
+                  Load the 6 starter template habits?
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -151,11 +200,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                       onResetDefaults();
                       setConfirmReset(false);
                       onClose();
-                      showToast('Reset to default habits template.');
+                      showToast('Loaded starter habits template.');
                     }}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white hover:bg-amber-500 cursor-pointer"
                   >
-                    Yes, Reset
+                    Yes, Load Templates
                   </button>
                   <button
                     type="button"
@@ -167,14 +216,19 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmReset(true)}
-                className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 font-semibold cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset to template habits</span>
-              </button>
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmReset(true);
+                    setConfirmClearAll(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 font-semibold cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Load starter template habits</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -1,13 +1,15 @@
+import { Preferences } from '@capacitor/preferences';
 import type { Habit, NotificationConfig } from '../types/habit';
 import { formatDateKey, getTodayDateKey, getWeekDates } from './dateUtils';
 import { IDENTITY_PRESETS } from '../constants/identities';
 
-const STORAGE_KEY_HABITS = 'habit_tracker_v6_habits';
-const STORAGE_KEY_JOURNALS = 'habit_tracker_v6_journals';
-const STORAGE_KEY_NOTIFS = 'habit_tracker_v6_notifs';
-const STORAGE_KEY_DARK = 'habit_dark_teal_v2';
-const STORAGE_KEY_CUSTOM_IDENTITIES = 'habit_tracker_custom_identities_v1';
-const STORAGE_KEY_DELETED_IDENTITIES = 'habit_tracker_deleted_identities_v1';
+export const STORAGE_KEY_HABITS = 'habit_tracker_v7_habits';
+export const STORAGE_KEY_JOURNALS = 'habit_tracker_v7_journals';
+export const STORAGE_KEY_NOTIFS = 'habit_tracker_v7_notifs';
+export const STORAGE_KEY_DARK = 'habit_dark_teal_v2';
+export const STORAGE_KEY_CUSTOM_IDENTITIES = 'habit_tracker_custom_identities_v1';
+export const STORAGE_KEY_DELETED_IDENTITIES = 'habit_tracker_deleted_identities_v1';
+export const STORAGE_KEY_INITIALIZED = 'habit_tracker_initialized_v2';
 
 export const INITIAL_NOTIFICATIONS: NotificationConfig = {
   enabled: true,
@@ -121,56 +123,103 @@ export function getInitialHabits(): Habit[] {
   ];
 }
 
+function normalizeHabits(raw: unknown[]): Habit[] {
+  return raw.map((item, idx: number) => {
+    const h = (item && typeof item === 'object' ? item : {}) as Partial<Habit>;
+    return {
+      id: h.id || `h_${Date.now()}_${idx}`,
+      name: h.name || 'Untitled Habit',
+      category: h.category || 'Fitness',
+      identity:
+        h.identity && !h.identity.startsWith('Someone aligned with ')
+          ? h.identity
+          : (h.category && IDENTITY_PRESETS[h.category]?.[0]) || 'A person committed to daily growth',
+      targetPerWeek: Number(h.targetPerWeek) || 5,
+      priorStreak: Number(h.priorStreak) || 0,
+      bestStreakRecord: Number(h.bestStreakRecord) || 1,
+      note: h.note || '',
+      time: h.time || '07:00',
+      location: h.location || 'Home',
+      stackedOnHabitId: h.stackedOnHabitId || undefined,
+      completedDates: h.completedDates && typeof h.completedDates === 'object' ? h.completedDates : {},
+      createdAt: h.createdAt || new Date().toISOString()
+    };
+  });
+}
+
+/**
+ * Synchronous initial load for React state (zero UI flash).
+ * Returns empty array [] if initialized or if user cleared habits.
+ */
 export function loadHabitsFromStorage(): Habit[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_HABITS);
-    if (saved) {
+    if (saved !== null) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((h: Partial<Habit>, idx: number) => ({
-          id: h.id || `h_${Date.now()}_${idx}`,
-          name: h.name || 'Untitled Habit',
-          category: h.category || 'Fitness',
-          identity:
-            h.identity && !h.identity.startsWith('Someone aligned with ')
-              ? h.identity
-              : (h.category && IDENTITY_PRESETS[h.category]?.[0]) || 'A person committed to daily growth',
-          targetPerWeek: Number(h.targetPerWeek) || 5,
-          priorStreak: Number(h.priorStreak) || 0,
-          bestStreakRecord: Number(h.bestStreakRecord) || 1,
-          note: h.note || '',
-          time: h.time || '07:00',
-          location: h.location || 'Home',
-          stackedOnHabitId: h.stackedOnHabitId || undefined,
-          completedDates: h.completedDates || {},
-          createdAt: h.createdAt || new Date().toISOString()
-        }));
+      if (Array.isArray(parsed)) {
+        return normalizeHabits(parsed);
       }
     }
 
-    return getInitialHabits();
+    // Check legacy v6 storage
+    const legacySaved = localStorage.getItem('habit_tracker_v6_habits');
+    if (legacySaved !== null) {
+      const parsedLegacy = JSON.parse(legacySaved);
+      if (Array.isArray(parsedLegacy)) {
+        return normalizeHabits(parsedLegacy);
+      }
+    }
+
+    // If app has ever been initialized, keep user's state (even if 0 habits)
+    const isInit = localStorage.getItem(STORAGE_KEY_INITIALIZED);
+    if (isInit === 'true') {
+      return [];
+    }
+
+    // Fresh install: start clean so the user doesn't have to clear someone else's demo data!
+    localStorage.setItem(STORAGE_KEY_INITIALIZED, 'true');
+    Preferences.set({ key: STORAGE_KEY_INITIALIZED, value: 'true' }).catch(() => {});
+    return [];
   } catch {
-    return getInitialHabits();
+    return [];
   }
 }
 
+/**
+ * Saves habits to both localStorage and native Android SharedPreferences (via Capacitor Preferences).
+ */
 export function saveHabitsToStorage(habits: Habit[]) {
   try {
-    localStorage.setItem(STORAGE_KEY_HABITS, JSON.stringify(habits));
+    const serialized = JSON.stringify(habits);
+    localStorage.setItem(STORAGE_KEY_HABITS, serialized);
+    localStorage.setItem(STORAGE_KEY_INITIALIZED, 'true');
+    Preferences.set({ key: STORAGE_KEY_HABITS, value: serialized }).catch(() => {});
+    Preferences.set({ key: STORAGE_KEY_INITIALIZED, value: 'true' }).catch(() => {});
   } catch {
     // LocalStorage write error (quota exceeded, etc.)
+  }
+}
+
+export function clearAllHabitsFromStorage() {
+  try {
+    const serialized = JSON.stringify([]);
+    localStorage.setItem(STORAGE_KEY_HABITS, serialized);
+    localStorage.setItem(STORAGE_KEY_INITIALIZED, 'true');
+    Preferences.set({ key: STORAGE_KEY_HABITS, value: serialized }).catch(() => {});
+    Preferences.set({ key: STORAGE_KEY_INITIALIZED, value: 'true' }).catch(() => {});
+  } catch {
+    // Ignored
   }
 }
 
 export function loadJournalsFromStorage(): Record<string, string> {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_JOURNALS);
-    if (saved) return JSON.parse(saved);
-
-    const today = getTodayDateKey();
-    return {
-      [today]: 'Started the day with calm focus, clear intent, and momentum.'
-    };
+    if (saved !== null) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+    return {};
   } catch {
     return {};
   }
@@ -178,7 +227,9 @@ export function loadJournalsFromStorage(): Record<string, string> {
 
 export function saveJournalsToStorage(journals: Record<string, string>) {
   try {
-    localStorage.setItem(STORAGE_KEY_JOURNALS, JSON.stringify(journals));
+    const serialized = JSON.stringify(journals);
+    localStorage.setItem(STORAGE_KEY_JOURNALS, serialized);
+    Preferences.set({ key: STORAGE_KEY_JOURNALS, value: serialized }).catch(() => {});
   } catch {
     // Ignored
   }
@@ -197,7 +248,9 @@ export function loadNotificationsFromStorage(): NotificationConfig {
 
 export function saveNotificationsToStorage(cfg: NotificationConfig) {
   try {
-    localStorage.setItem(STORAGE_KEY_NOTIFS, JSON.stringify(cfg));
+    const serialized = JSON.stringify(cfg);
+    localStorage.setItem(STORAGE_KEY_NOTIFS, serialized);
+    Preferences.set({ key: STORAGE_KEY_NOTIFS, value: serialized }).catch(() => {});
   } catch {
     // Ignored
   }
@@ -214,7 +267,9 @@ export function loadDarkModeFromStorage(): boolean {
 
 export function saveDarkModeToStorage(isDark: boolean) {
   try {
-    localStorage.setItem(STORAGE_KEY_DARK, JSON.stringify(isDark));
+    const serialized = JSON.stringify(isDark);
+    localStorage.setItem(STORAGE_KEY_DARK, serialized);
+    Preferences.set({ key: STORAGE_KEY_DARK, value: serialized }).catch(() => {});
   } catch {
     // Ignored
   }
@@ -238,7 +293,9 @@ export function loadCustomIdentitiesFromStorage(): string[] {
 export function saveCustomIdentitiesToStorage(identities: string[]): void {
   try {
     const clean = Array.from(new Set(identities.map((s) => s.trim()).filter(Boolean)));
-    localStorage.setItem(STORAGE_KEY_CUSTOM_IDENTITIES, JSON.stringify(clean));
+    const serialized = JSON.stringify(clean);
+    localStorage.setItem(STORAGE_KEY_CUSTOM_IDENTITIES, serialized);
+    Preferences.set({ key: STORAGE_KEY_CUSTOM_IDENTITIES, value: serialized }).catch(() => {});
   } catch {
     // Ignored
   }
@@ -262,9 +319,146 @@ export function loadDeletedIdentitiesFromStorage(): string[] {
 export function saveDeletedIdentitiesToStorage(identities: string[]): void {
   try {
     const clean = Array.from(new Set(identities.map((s) => s.trim()).filter(Boolean)));
-    localStorage.setItem(STORAGE_KEY_DELETED_IDENTITIES, JSON.stringify(clean));
+    const serialized = JSON.stringify(clean);
+    localStorage.setItem(STORAGE_KEY_DELETED_IDENTITIES, serialized);
+    Preferences.set({ key: STORAGE_KEY_DELETED_IDENTITIES, value: serialized }).catch(() => {});
   } catch {
     // Ignored
+  }
+}
+
+/**
+ * Hydrates state and localStorage from native Android SharedPreferences on app launch.
+ * This guarantees that even if WebView cache was discarded by Android OS on app close,
+ * the user's data is fully recovered from native persistent storage.
+ */
+export async function hydrateNativeStorage(): Promise<{
+  habits?: Habit[];
+  journals?: Record<string, string>;
+  notifications?: NotificationConfig;
+  isDarkMode?: boolean;
+  customIdentities?: string[];
+  deletedIdentities?: string[];
+  isInitialized: boolean;
+}> {
+  try {
+    const [
+      habitsPref,
+      journalsPref,
+      notifsPref,
+      darkPref,
+      customPref,
+      deletedPref,
+      initPref
+    ] = await Promise.all([
+      Preferences.get({ key: STORAGE_KEY_HABITS }),
+      Preferences.get({ key: STORAGE_KEY_JOURNALS }),
+      Preferences.get({ key: STORAGE_KEY_NOTIFS }),
+      Preferences.get({ key: STORAGE_KEY_DARK }),
+      Preferences.get({ key: STORAGE_KEY_CUSTOM_IDENTITIES }),
+      Preferences.get({ key: STORAGE_KEY_DELETED_IDENTITIES }),
+      Preferences.get({ key: STORAGE_KEY_INITIALIZED })
+    ]);
+
+    const isInitialized =
+      initPref.value === 'true' || localStorage.getItem(STORAGE_KEY_INITIALIZED) === 'true';
+
+    let habits: Habit[] | undefined;
+    if (habitsPref.value !== null) {
+      try {
+        const parsed = JSON.parse(habitsPref.value);
+        if (Array.isArray(parsed)) {
+          habits = normalizeHabits(parsed);
+          localStorage.setItem(STORAGE_KEY_HABITS, JSON.stringify(habits));
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    let journals: Record<string, string> | undefined;
+    if (journalsPref.value !== null) {
+      try {
+        journals = JSON.parse(journalsPref.value);
+        if (journals) {
+          localStorage.setItem(STORAGE_KEY_JOURNALS, journalsPref.value);
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    let notifications: NotificationConfig | undefined;
+    if (notifsPref.value !== null) {
+      try {
+        notifications = JSON.parse(notifsPref.value);
+        if (notifications) {
+          localStorage.setItem(STORAGE_KEY_NOTIFS, notifsPref.value);
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    let isDarkMode: boolean | undefined;
+    if (darkPref.value !== null) {
+      try {
+        isDarkMode = JSON.parse(darkPref.value);
+        if (typeof isDarkMode === 'boolean') {
+          localStorage.setItem(STORAGE_KEY_DARK, darkPref.value);
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    let customIdentities: string[] | undefined;
+    if (customPref.value !== null) {
+      try {
+        const parsed = JSON.parse(customPref.value);
+        if (Array.isArray(parsed)) {
+          customIdentities = parsed.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0
+          );
+          localStorage.setItem(STORAGE_KEY_CUSTOM_IDENTITIES, JSON.stringify(customIdentities));
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    let deletedIdentities: string[] | undefined;
+    if (deletedPref.value !== null) {
+      try {
+        const parsed = JSON.parse(deletedPref.value);
+        if (Array.isArray(parsed)) {
+          deletedIdentities = parsed.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0
+          );
+          localStorage.setItem(STORAGE_KEY_DELETED_IDENTITIES, JSON.stringify(deletedIdentities));
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    if (isInitialized) {
+      localStorage.setItem(STORAGE_KEY_INITIALIZED, 'true');
+    }
+
+    return {
+      habits,
+      journals,
+      notifications,
+      isDarkMode,
+      customIdentities,
+      deletedIdentities,
+      isInitialized
+    };
+  } catch {
+    return {
+      isInitialized: localStorage.getItem(STORAGE_KEY_INITIALIZED) === 'true'
+    };
   }
 }
 

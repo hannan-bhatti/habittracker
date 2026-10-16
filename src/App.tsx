@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Flame,
   Sparkles,
@@ -37,6 +37,7 @@ import {
 import {
   loadHabitsFromStorage,
   saveHabitsToStorage,
+  clearAllHabitsFromStorage,
   loadJournalsFromStorage,
   saveJournalsToStorage,
   loadNotificationsFromStorage,
@@ -47,7 +48,8 @@ import {
   loadCustomIdentitiesFromStorage,
   saveCustomIdentitiesToStorage,
   loadDeletedIdentitiesFromStorage,
-  saveDeletedIdentitiesToStorage
+  saveDeletedIdentitiesToStorage,
+  hydrateNativeStorage
 } from './utils/storageUtils';
 
 import { Header } from './components/Header';
@@ -102,6 +104,9 @@ export default function App() {
   const [isNotifModalOpen, setIsNotifModalOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
 
+  // Hydration ref to prevent wiping native storage before startup load completes
+  const isHydratedRef = useRef<boolean>(false);
+
   // Sync Dark Mode class with body & Android status bar
   useEffect(() => {
     saveDarkModeToStorage(isDarkMode);
@@ -119,10 +124,41 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Hide Native Splash on Mount
+  // Hide Native Splash on Mount & Hydrate from Native Android SharedPreferences
   useEffect(() => {
     SplashScreen.hide().catch(() => {});
     triggerHaptic('light');
+
+    let isMounted = true;
+    hydrateNativeStorage().then((data) => {
+      if (!isMounted) return;
+      if (data.habits !== undefined) {
+        setHabits(data.habits);
+      }
+      if (data.journals !== undefined) {
+        setDailyJournals(data.journals);
+      }
+      if (data.notifications !== undefined) {
+        setNotifications(data.notifications);
+        if (data.notifications.soundEnabled !== undefined) {
+          setSoundEnabled(data.notifications.soundEnabled);
+        }
+      }
+      if (data.isDarkMode !== undefined) {
+        setIsDarkMode(data.isDarkMode);
+      }
+      if (data.customIdentities !== undefined) {
+        setCustomIdentities(data.customIdentities);
+      }
+      if (data.deletedIdentities !== undefined) {
+        setDeletedIdentities(data.deletedIdentities);
+      }
+      isHydratedRef.current = true;
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Prevent background scrolling when modals are open
@@ -134,18 +170,21 @@ export default function App() {
     };
   }, [isHabitModalOpen, isNotifModalOpen, isBackupModalOpen]);
 
-  // Persist habits
+  // Persist habits (only after native hydration is ready)
   useEffect(() => {
+    if (!isHydratedRef.current) return;
     saveHabitsToStorage(habits);
   }, [habits]);
 
   // Persist journals
   useEffect(() => {
+    if (!isHydratedRef.current) return;
     saveJournalsToStorage(dailyJournals);
   }, [dailyJournals]);
 
   // Persist notifications config
   useEffect(() => {
+    if (!isHydratedRef.current) return;
     saveNotificationsToStorage(notifications);
   }, [notifications]);
 
@@ -537,6 +576,21 @@ export default function App() {
     showToast('Habit removed');
   };
 
+  const handleClearAllHabits = () => {
+    triggerHaptic('warning');
+    setHabits([]);
+    clearAllHabitsFromStorage();
+    showToast('All habits cleared.');
+  };
+
+  const handleLoadTemplates = () => {
+    triggerHaptic('success');
+    const defaults = getInitialHabits();
+    setHabits(defaults);
+    saveHabitsToStorage(defaults);
+    showToast('Loaded starter habits template.');
+  };
+
   // Schedule notifications with Capacitor
   const handleSaveNotifications = async () => {
     try {
@@ -776,6 +830,7 @@ export default function App() {
               onOpenEditModal={handleOpenEditModal}
               onDeleteHabit={handleDeleteHabit}
               onOpenAddModal={() => handleOpenAddModal(selectedCategory)}
+              onLoadTemplates={handleLoadTemplates}
               popEffects={popEffects}
             />
 
@@ -876,6 +931,7 @@ export default function App() {
           setDeletedIdentities([]);
           saveDeletedIdentitiesToStorage([]);
         }}
+        onClearAllHabits={handleClearAllHabits}
         showToast={showToast}
       />
     </div>
