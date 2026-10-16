@@ -1,6 +1,6 @@
 import type React from 'react';
-import { Bell, X, Volume2 } from 'lucide-react';
-import type { NotificationConfig } from '../../types/habit';
+import { Bell, X, Volume2, Clock } from 'lucide-react';
+import type { Habit, NotificationConfig } from '../../types/habit';
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -8,6 +8,7 @@ interface NotificationModalProps {
   config: NotificationConfig;
   onChangeConfig: (cfg: NotificationConfig) => void;
   onSave: () => void;
+  habits?: Habit[];
 }
 
 export const NotificationModal: React.FC<NotificationModalProps> = ({
@@ -15,9 +16,13 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   onClose,
   config,
   onChangeConfig,
-  onSave
+  onSave,
+  habits = []
 }) => {
   if (!isOpen) return null;
+
+  const habitRemindersActive = config.enabled && (config.habitRemindersEnabled !== false);
+  const scheduledHabits = habits.filter((h) => Boolean(h.time));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -36,12 +41,12 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
           </button>
         </div>
 
-        <div className="space-y-3.5">
-          {/* Daily Notifications Enable */}
+        <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Master Notifications Enable */}
           <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
             <div>
-              <span className="text-xs sm:text-sm font-semibold block">Enable Daily Reminders</span>
-              <span className="text-[11px] text-slate-400">Receive morning & evening pushes</span>
+              <span className="text-xs sm:text-sm font-semibold block">Enable Notifications</span>
+              <span className="text-[11px] text-slate-400">Receive timely habit alerts and reflections</span>
             </div>
             <input
               type="checkbox"
@@ -50,6 +55,51 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               className="w-4 h-4 accent-teal-600 cursor-pointer"
             />
           </label>
+
+          {/* Per-Habit Scheduled Time Alerts */}
+          <div className="p-3.5 rounded-xl border border-teal-200 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 space-y-2.5">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-start gap-2.5">
+                <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-xs sm:text-sm font-bold block text-slate-900 dark:text-slate-100">
+                    Per-Habit Time Alerts
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight block">
+                    Automatically trigger notifications at each habit&apos;s allocated time
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={config.habitRemindersEnabled !== false}
+                disabled={!config.enabled}
+                onChange={(e) =>
+                  onChangeConfig({ ...config, habitRemindersEnabled: e.target.checked })
+                }
+                className="w-4 h-4 accent-teal-600 cursor-pointer shrink-0 ml-2"
+              />
+            </label>
+
+            {habitRemindersActive && scheduledHabits.length > 0 && (
+              <div className="pt-2 border-t border-teal-100 dark:border-teal-900/40">
+                <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider block mb-1.5">
+                  Scheduled Habit Alarms ({scheduledHabits.length})
+                </span>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                  {scheduledHabits.map((h) => (
+                    <span
+                      key={h.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white dark:bg-slate-800 border border-teal-200/60 dark:border-teal-800/60 text-slate-700 dark:text-slate-200 shadow-2xs"
+                    >
+                      <span className="text-teal-600 dark:text-teal-400 font-bold">{h.time}</span>
+                      <span className="truncate max-w-[120px]">{h.name}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Morning Kick-off */}
           <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800">

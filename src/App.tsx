@@ -11,7 +11,7 @@ import {
 import confetti from 'canvas-confetti';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
-import { LocalNotifications } from '@capacitor/local-notifications';
+import { scheduleAllNotifications } from './utils/notificationUtils';
 
 import type {
   Habit,
@@ -187,6 +187,14 @@ export default function App() {
     if (!isHydratedRef.current) return;
     saveNotificationsToStorage(notifications);
   }, [notifications]);
+
+  // Synchronize scheduled per-habit notifications whenever habits or reminder settings change
+  useEffect(() => {
+    if (!isHydratedRef.current) return;
+    if (notifications.enabled) {
+      scheduleAllNotifications(notifications, habits).catch(() => {});
+    }
+  }, [habits, notifications]);
 
   // Auto-dismiss celebration toast
   useEffect(() => {
@@ -591,39 +599,18 @@ export default function App() {
     showToast('Loaded starter habits template.');
   };
 
-  // Schedule notifications with Capacitor
+  // Schedule notifications with Capacitor & sync per-habit times
   const handleSaveNotifications = async () => {
     try {
-      const perm = await LocalNotifications.requestPermissions();
-      if (perm.display === 'granted') {
-        const pending = await LocalNotifications.getPending();
-        if (pending.notifications.length > 0) {
-          await LocalNotifications.cancel({ notifications: pending.notifications });
-        }
-
-        if (notifications.enabled) {
-          const list = [];
-          const [mH, mM] = notifications.morningTime.split(':').map(Number);
-          list.push({
-            id: 101,
-            title: 'Habit Tracker ☀️',
-            body: 'A fresh day has begun. Check off your morning routines!',
-            schedule: { on: { hour: mH, minute: mM }, repeats: true }
-          });
-
-          const [eH, eM] = notifications.eveningTime.split(':').map(Number);
-          list.push({
-            id: 103,
-            title: 'Evening Reflection 🌙',
-            body: 'Review your habit streaks and write your 1-sentence reflection.',
-            schedule: { on: { hour: eH, minute: eM }, repeats: true }
-          });
-
-          await LocalNotifications.schedule({ notifications: list });
-          showToast('Notification schedule updated!');
-        } else {
-          showToast('Notifications disabled.');
-        }
+      const success = await scheduleAllNotifications(notifications, habits);
+      if (success) {
+        showToast(
+          notifications.enabled
+            ? 'Notifications & per-habit alarms scheduled!'
+            : 'Notifications disabled.'
+        );
+      } else {
+        showToast('Notification preferences saved.');
       }
     } catch {
       showToast('Notification preferences saved.');
@@ -902,6 +889,7 @@ export default function App() {
         config={notifications}
         onChangeConfig={(newCfg) => setNotifications(newCfg)}
         onSave={handleSaveNotifications}
+        habits={habits}
       />
 
       <BackupModal

@@ -79,6 +79,7 @@ export interface NotificationConfig {
   morningTime: string;
   eveningTime: string;
   soundEnabled: boolean;
+  habitRemindersEnabled?: boolean;
 }
 
 export interface BadgeItem {

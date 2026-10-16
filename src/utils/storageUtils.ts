@@ -15,7 +15,8 @@ export const INITIAL_NOTIFICATIONS: NotificationConfig = {
   enabled: true,
   morningTime: '07:00',
   eveningTime: '21:30',
-  soundEnabled: true
+  soundEnabled: true,
+  habitRemindersEnabled: true
 };
 
 export function getInitialHabits(): Habit[] {

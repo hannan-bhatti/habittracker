@@ -187,7 +187,7 @@ def generate_assets():
   body {{
     width: {width}px;
     height: {height}px;
-    background: #f4f3f8;
+    background: #f8fafc;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -208,20 +208,20 @@ def generate_assets():
     height: {badge_size}px;
     border-radius: 50%;
     background: #ffffff;
-    border: {max(2, int(badge_size * 0.015))}px solid #cbd5e1;
-    box-shadow: 0 {int(badge_size * 0.08)}px {int(badge_size * 0.22)}px rgba(66, 165, 245, 0.18), 0 4px 12px rgba(0, 0, 0, 0.04);
+    border: {max(2, int(badge_size * 0.02))}px solid #cbd5e1;
+    box-shadow: 0 {int(badge_size * 0.08)}px {int(badge_size * 0.22)}px rgba(56, 189, 248, 0.22), 0 4px 12px rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    margin-bottom: {int(min_dim * 0.05)}px;
+    margin-bottom: {int(min_dim * 0.045)}px;
   }}
   .title {{
     font-size: {title_size}px;
     font-weight: 800;
     letter-spacing: -0.025em;
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #0284c7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: {int(min_dim * 0.012)}px;
@@ -240,11 +240,11 @@ def generate_assets():
 <body>
   <div class="brand-card">
     <div class="circle-badge">
-      <svg width="{badge_size}" height="{badge_size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="{badge_size}" height="{badge_size}" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="splashGrid" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
-            <line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="1.2" />
-            <line x1="0" y1="0" x2="10" y2="0" stroke="#e2e8f0" stroke-width="1.2" />
+          <pattern id="splashGrid" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#e2e8f0" stroke-width="0.75" />
+            <line x1="0" y1="0" x2="6" y2="0" stroke="#e2e8f0" stroke-width="0.75" />
           </pattern>
           <linearGradient id="splashBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#60a5fa" />
@@ -252,10 +252,11 @@ def generate_assets():
             <stop offset="100%" stop-color="#0284c7" />
           </linearGradient>
         </defs>
-        <rect width="100" height="100" fill="url(#splashGrid)" opacity="0.85" />
-        <g transform="translate(50,50) scale(1.15) translate(-50,-50)">
-          <polygon points="21.6,34.2 14.1,42.5 31.6,60.0 24.1,69.2 31.6,75.8 39.9,68.3 58.3,85.8 65.8,78.3" fill="url(#splashBlueGrad)" />
-          <polygon points="39.1,16.7 31.6,24.2 75.8,68.3 83.3,60.0 65.8,42.5 84.1,24.2 75.8,15.8 57.4,34.2" fill="url(#splashBlueGrad)" />
+        <circle cx="28" cy="28" r="28" fill="#ffffff" />
+        <circle cx="28" cy="28" r="27" fill="url(#splashGrid)" opacity="0.8" />
+        <g>
+          <polygon points="17.5,22.1 14.7,25.2 21.2,31.7 18.4,35.1 21.2,37.6 24.3,34.8 31.1,41.3 33.9,38.5" fill="url(#splashBlueGrad)" />
+          <polygon points="24.0,15.6 21.2,18.4 37.6,34.8 40.4,31.7 33.9,25.2 40.7,18.4 37.6,15.3 30.8,22.1" fill="url(#splashBlueGrad)" />
         </g>
       </svg>
     </div>
