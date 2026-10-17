@@ -163,6 +163,14 @@ def generate_assets():
         im_fg.resize((fg_sz, fg_sz), Image.Resampling.LANCZOS).save(os.path.join(target_dir, "ic_launcher_foreground.png"))
         print(f"Generated launcher icons in {folder} ({icon_sz}x{icon_sz}, fg {fg_sz}x{fg_sz})")
 
+    # Generate Android 12+ Splash Screen Icon (Square 512x512 centered circular badge)
+    splash_icon = im_fg.resize((512, 512), Image.Resampling.LANCZOS)
+    for draw_folder in ["drawable", "drawable-nodpi", "drawable-v24", "drawable-port-xxxhdpi"]:
+        icon_target_dir = os.path.join(RES_DIR, draw_folder)
+        os.makedirs(icon_target_dir, exist_ok=True)
+        splash_icon.save(os.path.join(icon_target_dir, "splash_icon.png"))
+        print(f"Generated Android 12+ splash icon: {draw_folder}/splash_icon.png (512x512)")
+
     # Clean master files
     for p in [master_icon_path, master_fg_path]:
         if os.path.exists(p): os.remove(p)
@@ -267,7 +275,7 @@ def generate_assets():
 </html>"""
 
     splash_targets = [
-        ("drawable", 480, 320),
+        ("drawable", 1080, 1920),
         ("drawable-port-mdpi", 320, 480),
         ("drawable-port-hdpi", 480, 800),
         ("drawable-port-xhdpi", 720, 1280),
