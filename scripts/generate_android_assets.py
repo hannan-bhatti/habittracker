@@ -6,7 +6,7 @@ CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES_DIR = os.path.join(BASE_DIR, "android", "app", "src", "main", "res")
 
-def render_html_to_png(html_content, output_path, width, height):
+def render_html_to_png(html_content, output_path, width, height, transparent=False):
     temp_html = os.path.join(BASE_DIR, "temp_render.html")
     with open(temp_html, "w", encoding="utf-8") as f:
         f.write(html_content)
@@ -17,9 +17,11 @@ def render_html_to_png(html_content, output_path, width, height):
         "--disable-gpu",
         "--force-device-scale-factor=1",
         f"--window-size={width},{height}",
-        f"--screenshot={output_path}",
+        f"--screenshot={os.path.abspath(output_path)}",
         "file:///" + os.path.abspath(temp_html).replace("\\", "/")
     ]
+    if transparent:
+        cmd.insert(4, "--default-background-color=00000000")
     subprocess.run(cmd, check=True)
     if os.path.exists(temp_html):
         os.remove(temp_html)
@@ -163,25 +165,123 @@ def generate_assets():
         im_fg.resize((fg_sz, fg_sz), Image.Resampling.LANCZOS).save(os.path.join(target_dir, "ic_launcher_foreground.png"))
         print(f"Generated launcher icons in {folder} ({icon_sz}x{icon_sz}, fg {fg_sz}x{fg_sz})")
 
-    # Generate Android 12+ Splash Screen Icon (Square 512x512 centered circular badge)
-    splash_icon = im_fg.resize((512, 512), Image.Resampling.LANCZOS)
-    for draw_folder in ["drawable", "drawable-nodpi", "drawable-v24", "drawable-port-xxxhdpi"]:
-        icon_target_dir = os.path.join(RES_DIR, draw_folder)
-        os.makedirs(icon_target_dir, exist_ok=True)
-        splash_icon.save(os.path.join(icon_target_dir, "splash_icon.png"))
-        print(f"Generated Android 12+ splash icon: {draw_folder}/splash_icon.png (512x512)")
-
     # Clean master files
     for p in [master_icon_path, master_fg_path]:
         if os.path.exists(p): os.remove(p)
 
+    print("\nGenerating Android 12+ Splash Screen Icon with Logo, Name, and Tagline...")
+    splash_icon_html = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1024px;
+    height: 1024px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+  }
+  .brand-lockup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .circle-badge {
+    width: 290px;
+    height: 290px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 6px solid #cbd5e1;
+    box-shadow: 0 18px 45px rgba(56, 189, 248, 0.22), 0 4px 14px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+  .title {
+    font-size: 74px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #0284c7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 18px;
+    text-align: center;
+    line-height: 1.15;
+  }
+  .subtitle {
+    font-size: 38px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="brand-lockup">
+    <div class="circle-badge">
+      <svg width="290" height="290" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="splashGrid" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45 0 0)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#e2e8f0" stroke-width="0.75" />
+            <line x1="0" y1="0" x2="6" y2="0" stroke="#e2e8f0" stroke-width="0.75" />
+          </pattern>
+          <linearGradient id="splashBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa" />
+            <stop offset="50%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+          </linearGradient>
+        </defs>
+        <circle cx="28" cy="28" r="28" fill="#ffffff" />
+        <circle cx="28" cy="28" r="27" fill="url(#splashGrid)" opacity="0.8" />
+        <g>
+          <polygon points="17.5,22.1 14.7,25.2 21.2,31.7 18.4,35.1 21.2,37.6 24.3,34.8 31.1,41.3 33.9,38.5" fill="url(#splashBlueGrad)" />
+          <polygon points="24.0,15.6 21.2,18.4 37.6,34.8 40.4,31.7 33.9,25.2 40.7,18.4 37.6,15.3 30.8,22.1" fill="url(#splashBlueGrad)" />
+        </g>
+      </svg>
+    </div>
+    <div class="title">Habit Tracker</div>
+    <div class="subtitle">Atomic Daily Loops</div>
+  </div>
+</body>
+</html>"""
+    master_splash_icon = os.path.join(BASE_DIR, "master_splash_icon.png")
+    render_html_to_png(splash_icon_html, master_splash_icon, 1024, 1024, transparent=True)
+    
+    with Image.open(master_splash_icon) as im_sp_icon:
+        for draw_folder in ["drawable", "drawable-nodpi", "drawable-v24", "drawable-port-xxxhdpi"]:
+            icon_target_dir = os.path.join(RES_DIR, draw_folder)
+            os.makedirs(icon_target_dir, exist_ok=True)
+            im_sp_icon.save(os.path.join(icon_target_dir, "splash_icon.png"))
+            print(f"Generated Android 12+ splash icon: {draw_folder}/splash_icon.png (1024x1024)")
+    if os.path.exists(master_splash_icon):
+        os.remove(master_splash_icon)
+
     print("\nGenerating Splash Screens matching screenshot...")
-    # Splash Screen Template (Clean background, circular grid badge, dual-T icon, and title)
+    # Splash Screen Template (Clean background, circular grid badge, dual-T icon, title, and tagline)
     def create_splash_html(width, height):
         min_dim = min(width, height)
-        badge_size = int(min_dim * 0.42)
-        title_size = max(24, int(min_dim * 0.075))
-        sub_size = max(11, int(min_dim * 0.03))
+        scale = min_dim / 390.0
+        badge_size = int(84 * scale)
+        margin_badge = int(14 * scale)
+        title_size = int(22 * scale)
+        margin_title = int(5 * scale)
+        sub_size = int(11 * scale)
         
         return f"""<!DOCTYPE html>
 <html>
@@ -189,7 +289,7 @@ def generate_assets():
 <meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
@@ -209,6 +309,7 @@ def generate_assets():
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
     z-index: 10;
   }}
   .circle-badge {{
@@ -223,7 +324,7 @@ def generate_assets():
     justify-content: center;
     position: relative;
     overflow: hidden;
-    margin-bottom: {int(min_dim * 0.045)}px;
+    margin-bottom: {margin_badge}px;
   }}
   .title {{
     font-size: {title_size}px;
@@ -232,14 +333,15 @@ def generate_assets():
     background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #0284c7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: {int(min_dim * 0.012)}px;
+    margin-bottom: {margin_title}px;
     text-align: center;
+    line-height: 1.15;
   }}
   .subtitle {{
     font-size: {sub_size}px;
     font-weight: 700;
     color: #64748b;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     text-align: center;
   }}
