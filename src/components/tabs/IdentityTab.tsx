@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { UserCheck, Sparkles, Plus, Award, Quote, CheckCircle2, Trash2 } from 'lucide-react';
+import { UserCheck, Sparkles, Plus, Award, CheckCircle2, Trash2 } from 'lucide-react';
 import type { IdentitySummary } from '../../types/habit';
-import { DEFAULT_IDENTITY_QUOTE } from '../../constants/identities';
 import { triggerHaptic } from '../../utils/haptics';
 import { DailyHabitTrackerLogo } from '../DailyHabitTrackerLogo';
 
@@ -35,44 +34,31 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Inspirational Identity Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-teal-900 via-slate-900 to-sky-950 text-white border border-teal-500/30 shadow-md">
-        <div className="relative z-10 space-y-3">
+      {/* Identity Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-teal-900 via-slate-900 to-sky-950 text-white border border-teal-500/30 shadow-md">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <DailyHabitTrackerLogo size={36} />
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-300 block">
-                Atomic Habit System
+                Identity Hub
               </span>
-              <span className="text-xs font-bold text-slate-200">
+              <span className="text-sm font-bold text-slate-100">
                 Identity-Based Habit Architecture
               </span>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 max-w-3xl">
-            <Quote className="w-6 h-6 text-teal-400/40 shrink-0 mt-1" />
-            <p className="text-sm sm:text-base font-medium italic text-slate-200 leading-relaxed">
-              &ldquo;{DEFAULT_IDENTITY_QUOTE.quote}&rdquo;
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-teal-500/20">
-            <span className="text-xs text-teal-400/80 font-semibold">
-              — {DEFAULT_IDENTITY_QUOTE.author}
+          <div className="flex items-center gap-3 text-xs font-bold bg-white/5 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-white/10 w-fit">
+            <span className="inline-flex items-center gap-1.5 text-teal-300">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              {totalLifetimeVotes} Total Votes
             </span>
-
-            <div className="flex items-center gap-4 text-xs font-bold">
-              <span className="inline-flex items-center gap-1.5 text-teal-300">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                {totalLifetimeVotes} Total Identity Votes
-              </span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1 text-sky-300">
-                <Award className="w-3.5 h-3.5" />
-                {embodiedCount} Embodied Identities
-              </span>
-            </div>
+            <span className="text-white/30">•</span>
+            <span className="inline-flex items-center gap-1 text-sky-300">
+              <Award className="w-3.5 h-3.5" />
+              {embodiedCount} Embodied
+            </span>
           </div>
         </div>
 

@@ -30,8 +30,3 @@ export const IDENTITY_PRESETS: Record<string, string[]> = {
     'Someone who chooses consistency over fleeting motivation'
   ]
 };
-
-export const DEFAULT_IDENTITY_QUOTE = {
-  quote: 'Every action you take is a vote for the type of person you wish to become. No single instance will transform your beliefs, but as the votes build up, so does the evidence of your new identity.',
-  author: 'James Clear, Atomic Habits'
-};
