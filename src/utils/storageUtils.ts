@@ -16,7 +16,9 @@ export const INITIAL_NOTIFICATIONS: NotificationConfig = {
   morningTime: '07:00',
   eveningTime: '21:30',
   soundEnabled: true,
-  habitRemindersEnabled: true
+  habitRemindersEnabled: true,
+  reminderLeadMinutes: 10,
+  remindAtExactTime: true
 };
 
 export function getInitialHabits(): Habit[] {
@@ -239,7 +241,15 @@ export function saveJournalsToStorage(journals: Record<string, string>) {
 export function loadNotificationsFromStorage(): NotificationConfig {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_NOTIFS);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...INITIAL_NOTIFICATIONS,
+        ...parsed,
+        reminderLeadMinutes: parsed.reminderLeadMinutes ?? 10,
+        remindAtExactTime: parsed.remindAtExactTime ?? true
+      };
+    }
 
     return INITIAL_NOTIFICATIONS;
   } catch {

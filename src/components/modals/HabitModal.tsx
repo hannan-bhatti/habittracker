@@ -14,12 +14,14 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
-  Calendar
+  Calendar,
+  Hourglass
 } from 'lucide-react';
 import type { Habit, CategoryInfo } from '../../types/habit';
 import { IDENTITY_PRESETS } from '../../constants/identities';
 import { triggerHaptic } from '../../utils/haptics';
 import { DailyHabitTrackerLogo } from '../DailyHabitTrackerLogo';
+import { calculateAdvanceTime } from '../../utils/notificationUtils';
 
 interface HabitModalProps {
   isOpen: boolean;
@@ -716,7 +718,15 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">What exact time of day will you perform this?</span>
+                <div className="flex flex-wrap items-center justify-between gap-1 mt-1">
+                  <span className="text-[10px] text-slate-400">What exact time of day will you perform this?</span>
+                  {formTime && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/60">
+                      <Hourglass className="w-2.5 h-2.5" />
+                      10m reminder: {calculateAdvanceTime(formTime, 10).timeString}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>

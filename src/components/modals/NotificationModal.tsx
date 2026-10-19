@@ -1,6 +1,7 @@
 import type React from 'react';
-import { Bell, X, Volume2, Clock } from 'lucide-react';
+import { Bell, X, Volume2, Clock, Hourglass, Timer } from 'lucide-react';
 import type { Habit, NotificationConfig } from '../../types/habit';
+import { calculateAdvanceTime } from '../../utils/notificationUtils';
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
 
   const habitRemindersActive = config.enabled && (config.habitRemindersEnabled !== false);
   const scheduledHabits = habits.filter((h) => Boolean(h.time));
+  const leadMinutes = config.reminderLeadMinutes ?? 10;
+  const remindAtExact = config.remindAtExactTime ?? true;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -57,16 +60,16 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
           </label>
 
           {/* Per-Habit Scheduled Time Alerts */}
-          <div className="p-3.5 rounded-xl border border-teal-200 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 space-y-2.5">
+          <div className="p-3.5 rounded-xl border border-teal-200 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 space-y-3">
             <label className="flex items-center justify-between cursor-pointer">
               <div className="flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="text-xs sm:text-sm font-bold block text-slate-900 dark:text-slate-100">
-                    Per-Habit Time Alerts
+                    Per-Habit Task Reminders
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight block">
-                    Automatically trigger notifications at each habit&apos;s allocated time
+                    Receive actionable alerts before each habit needs to be performed
                   </span>
                 </div>
               </div>
@@ -81,22 +84,97 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               />
             </label>
 
-            {habitRemindersActive && scheduledHabits.length > 0 && (
-              <div className="pt-2 border-t border-teal-100 dark:border-teal-900/40">
-                <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider block mb-1.5">
-                  Scheduled Habit Alarms ({scheduledHabits.length})
-                </span>
-                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                  {scheduledHabits.map((h) => (
-                    <span
-                      key={h.id}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white dark:bg-slate-800 border border-teal-200/60 dark:border-teal-800/60 text-slate-700 dark:text-slate-200 shadow-2xs"
-                    >
-                      <span className="text-teal-600 dark:text-teal-400 font-bold">{h.time}</span>
-                      <span className="truncate max-w-[120px]">{h.name}</span>
-                    </span>
-                  ))}
+            {habitRemindersActive && (
+              <div className="space-y-3 pt-2 border-t border-teal-200/60 dark:border-teal-900/40">
+                {/* Advance Notice Minutes Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-white/70 dark:bg-slate-800/70 border border-teal-200/40 dark:border-teal-800/40">
+                  <div className="flex items-center gap-2">
+                    <Hourglass className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold block text-slate-800 dark:text-slate-200">
+                        Advance Notice
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Remind before scheduled time
+                      </span>
+                    </div>
+                  </div>
+                  <select
+                    value={leadMinutes}
+                    onChange={(e) =>
+                      onChangeConfig({ ...config, reminderLeadMinutes: Number(e.target.value) })
+                    }
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/70 border border-teal-300 dark:border-teal-700 text-teal-900 dark:text-teal-200 outline-none cursor-pointer"
+                  >
+                    <option value={10}>10 mins before (Recommended)</option>
+                    <option value={5}>5 mins before</option>
+                    <option value={15}>15 mins before</option>
+                    <option value={30}>30 mins before</option>
+                    <option value={0}>At exact time only</option>
+                  </select>
                 </div>
+
+                {/* Optional Alert at Exact Start Time */}
+                {leadMinutes > 0 && (
+                  <label className="flex items-center justify-between cursor-pointer px-2.5 py-1.5 rounded-lg bg-white/40 dark:bg-slate-800/40 border border-teal-200/30 dark:border-teal-900/30">
+                    <div className="flex items-center gap-2">
+                      <Timer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                        Also chime right when task starts
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={remindAtExact}
+                      onChange={(e) =>
+                        onChangeConfig({ ...config, remindAtExactTime: e.target.checked })
+                      }
+                      className="w-3.5 h-3.5 accent-teal-600 cursor-pointer"
+                    />
+                  </label>
+                )}
+
+                {/* Scheduled Habits Alarms Live Preview */}
+                {scheduledHabits.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider block mb-1.5">
+                      Active Alarms ({scheduledHabits.length} habits):
+                    </span>
+                    <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
+                      {scheduledHabits.map((h) => {
+                        const adv = calculateAdvanceTime(h.time, leadMinutes);
+                        return (
+                          <div
+                            key={h.id}
+                            className="flex items-center justify-between p-2 rounded-lg text-xs bg-white dark:bg-slate-800 border border-teal-200/60 dark:border-teal-800/60 shadow-2xs"
+                          >
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate pr-2">
+                              {h.name}
+                            </span>
+                            <div className="flex items-center gap-1.5 shrink-0 text-[10px] font-bold">
+                              {leadMinutes > 0 ? (
+                                <>
+                                  <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 text-amber-700 dark:text-amber-300">
+                                    ⏳ {adv.timeString} ({leadMinutes}m before)
+                                  </span>
+                                  {remindAtExact && (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/70 text-teal-700 dark:text-teal-300">
+                                      ⏰ {h.time}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/70 text-teal-700 dark:text-teal-300">
+                                  ⏰ {h.time}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

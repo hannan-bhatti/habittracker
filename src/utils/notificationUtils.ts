@@ -2,20 +2,44 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import type { Habit, NotificationConfig } from '../types/habit';
 
 /**
- * Deterministically generates a stable 32-bit positive integer ID for each habit notification.
+ * Calculates advance reminder time given a time string "HH:mm" and lead minutes.
+ * Correctly wraps around the 24-hour boundary (e.g. 00:05 with 10m lead -> 23:55).
  */
-export function getHabitNotificationId(habitId: string): number {
+export function calculateAdvanceTime(
+  timeStr: string,
+  leadMinutes: number
+): { hour: number; minute: number; timeString: string } {
+  if (!timeStr) return { hour: 0, minute: 0, timeString: '00:00' };
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) {
+    return { hour: 0, minute: 0, timeString: '00:00' };
+  }
+  const total = h * 60 + m;
+  const target = (total - leadMinutes + 24 * 60) % (24 * 60);
+  const remH = Math.floor(target / 60);
+  const remM = target % 60;
+  const timeString = `${String(remH).padStart(2, '0')}:${String(remM).padStart(2, '0')}`;
+  return { hour: remH, minute: remM, timeString };
+}
+
+/**
+ * Deterministically generates a stable 32-bit positive integer ID for each habit notification.
+ * Uses distinct offset ranges for advance lead reminders vs exact-time alerts.
+ */
+export function getHabitNotificationId(habitId: string, alertType: 'lead' | 'exact' = 'lead'): number {
   let hash = 0;
-  for (let i = 0; i < habitId.length; i++) {
-    hash = (hash << 5) - hash + habitId.charCodeAt(i);
+  const key = `${habitId}_${alertType}`;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash << 5) - hash + key.charCodeAt(i);
     hash |= 0;
   }
-  return Math.abs(hash % 10000000) + 1000;
+  return Math.abs(hash % 10000000) + (alertType === 'lead' ? 2000 : 1000);
 }
 
 /**
  * Configures the Android notification channel and schedules recurring daily notifications
- * for each individual habit at its allocated time, along with morning kick-off and evening reflection.
+ * for each individual habit at its advance reminder time (default 10 mins before),
+ * its exact start time, along with morning kick-off and evening reflection.
  */
 export async function scheduleAllNotifications(
   notifications: NotificationConfig,
@@ -27,7 +51,7 @@ export async function scheduleAllNotifications(
       await LocalNotifications.createChannel({
         id: 'habits-daily-channel',
         name: 'Daily Habit Reminders',
-        description: 'Timely reminders when scheduled habit times arrive',
+        description: 'Advance reminders and timely alerts when scheduled habit times arrive',
         importance: 4, // High importance (banners + sound)
         visibility: 1,
         vibration: true
@@ -94,29 +118,50 @@ export async function scheduleAllNotifications(
       }
     }
 
-    // 6. Schedule every habit at its individually allocated time
+    // 6. Schedule per-habit advance reminders (10 mins before) and start alerts
     if (notifications.habitRemindersEnabled !== false) {
+      const leadMinutes = notifications.reminderLeadMinutes ?? 10;
+      const remindAtExact = notifications.remindAtExactTime ?? true;
+
       habits.forEach((habit) => {
         if (!habit.time) return;
         const [hH, hM] = habit.time.split(':').map(Number);
         if (isNaN(hH) || isNaN(hM)) return;
 
-        const notifId = getHabitNotificationId(habit.id);
         const detail = habit.identity
           ? `“${habit.identity}”`
           : habit.note
           ? habit.note
           : `Stay consistent with your ${habit.category || 'daily'} habit!`;
 
-        const locationText = habit.location ? ` (📍 ${habit.location})` : '';
+        const locationText = habit.location ? ` • 📍 ${habit.location}` : '';
 
-        list.push({
-          id: notifId,
-          title: `Time for: ${habit.name} ⏰`,
-          body: `${detail}${locationText}`,
-          channelId: 'habits-daily-channel',
-          schedule: { on: { hour: hH, minute: hM }, repeats: true }
-        });
+        // 6A. 10-Minute (or configured lead) Advance Reminder
+        if (leadMinutes > 0) {
+          const adv = calculateAdvanceTime(habit.time, leadMinutes);
+          const leadNotifId = getHabitNotificationId(habit.id, 'lead');
+
+          list.push({
+            id: leadNotifId,
+            title: `Starting in ${leadMinutes}m: ${habit.name} ⏳`,
+            body: `Scheduled for ${habit.time}. ${detail}${locationText}`,
+            channelId: 'habits-daily-channel',
+            schedule: { on: { hour: adv.hour, minute: adv.minute }, repeats: true }
+          });
+        }
+
+        // 6B. Exact Scheduled Start Time Alert
+        if (remindAtExact || leadMinutes === 0) {
+          const exactNotifId = getHabitNotificationId(habit.id, 'exact');
+
+          list.push({
+            id: exactNotifId,
+            title: `Time for: ${habit.name} ⏰`,
+            body: `${detail}${locationText}`,
+            channelId: 'habits-daily-channel',
+            schedule: { on: { hour: hH, minute: hM }, repeats: true }
+          });
+        }
       });
     }
 

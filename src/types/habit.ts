@@ -80,6 +80,8 @@ export interface NotificationConfig {
   eveningTime: string;
   soundEnabled: boolean;
   habitRemindersEnabled?: boolean;
+  reminderLeadMinutes?: number; // Advance reminder minutes (e.g. 10m before). Default: 10
+  remindAtExactTime?: boolean;  // Also alert right at habit start time. Default: true
 }
 
 export interface BadgeItem {
