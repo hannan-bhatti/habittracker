@@ -5,11 +5,12 @@ import { formatDateKey, parseDateKey, getTodayDateKey } from '../../utils/dateUt
 
 interface HeatmapTabProps {
   habits: Habit[];
+  todayKey?: string;
   onSelectDate: (dateStr: string) => void;
 }
 
-export const HeatmapTab: React.FC<HeatmapTabProps> = ({ habits, onSelectDate }) => {
-  const todayKey = getTodayDateKey();
+export const HeatmapTab: React.FC<HeatmapTabProps> = ({ habits, todayKey: propTodayKey, onSelectDate }) => {
+  const todayKey = propTodayKey || getTodayDateKey();
 
   // Generate real 20-week historical grid ending on current week's Sunday
   const heatmapData = useMemo(() => {

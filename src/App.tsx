@@ -24,6 +24,7 @@ import { CATEGORIES } from './constants/categories';
 
 import {
   getWeekDates,
+  getWeekOffsetForDate,
   getTodayDateKey,
   parseDateKey
 } from './utils/dateUtils';
@@ -67,13 +68,13 @@ import { NotificationModal } from './components/modals/NotificationModal';
 import { BackupModal } from './components/modals/BackupModal';
 
 export default function App() {
-  // Theme & Notifications initial state
+  // Theme & Notifications initial state (single source of truth for soundEnabled)
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => loadDarkModeFromStorage());
   const [notifications, setNotifications] = useState<NotificationConfig>(() => loadNotificationsFromStorage());
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    const cfg = loadNotificationsFromStorage();
-    return cfg.soundEnabled ?? true;
-  });
+  const soundEnabled = notifications.soundEnabled ?? true;
+
+  // Reactive current date key (auto-updates on midnight rollover / app resume)
+  const [todayKey, setTodayKey] = useState<string>(() => getTodayDateKey());
 
   // Active View Tab: 'dashboard' | 'identity' | 'stacks' | 'heatmap' | 'badges'
   const [activeTab, setActiveTab] = useState<'dashboard' | 'identity' | 'stacks' | 'heatmap' | 'badges'>('dashboard');
@@ -140,9 +141,6 @@ export default function App() {
       }
       if (data.notifications !== undefined) {
         setNotifications(data.notifications);
-        if (data.notifications.soundEnabled !== undefined) {
-          setSoundEnabled(data.notifications.soundEnabled);
-        }
       }
       if (data.isDarkMode !== undefined) {
         setIsDarkMode(data.isDarkMode);
@@ -158,6 +156,36 @@ export default function App() {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  // Keep todayKey fresh across midnight rollovers and Android background resumes
+  useEffect(() => {
+    const checkDateRollover = () => {
+      const freshToday = getTodayDateKey();
+      setTodayKey((prevToday) => {
+        if (freshToday !== prevToday) {
+          setSelectedDateStr((prevSelected) => (prevSelected === prevToday ? freshToday : prevSelected));
+          return freshToday;
+        }
+        return prevToday;
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkDateRollover();
+      }
+    };
+
+    window.addEventListener('focus', checkDateRollover);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const interval = setInterval(checkDateRollover, 60_000);
+
+    return () => {
+      window.removeEventListener('focus', checkDateRollover);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
     };
   }, []);
 
@@ -221,12 +249,12 @@ export default function App() {
   }, []);
 
   // Compute 7 days for the active week view
-  const weekDays = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+  const weekDays = useMemo(() => getWeekDates(weekOffset, todayKey), [weekOffset, todayKey]);
 
   // Handle week offset changes synchronously without setState in effect
   const handleChangeWeekOffset = (newOffset: number) => {
     setWeekOffset(newOffset);
-    const newWeekDays = getWeekDates(newOffset);
+    const newWeekDays = getWeekDates(newOffset, todayKey);
     const todayDay = newWeekDays.find((d) => d.isToday);
     setSelectedDateStr(todayDay ? todayDay.dateStr : newWeekDays[0].dateStr);
   };
@@ -238,10 +266,19 @@ export default function App() {
 
     return habits.map((h): EnrichedHabit => ({
       ...h,
-      stats: calculateHabitStats(h, weekDays),
+      stats: calculateHabitStats(h, weekDays, todayKey),
       stackedAnchorHabit: h.stackedOnHabitId ? habitMap.get(h.stackedOnHabitId) : undefined
     }));
-  }, [habits, weekDays]);
+  }, [habits, weekDays, todayKey]);
+
+  // Category counts computed from all habits (so switching category filter doesn't zero out other tabs)
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    habits.forEach((h) => {
+      counts[h.category] = (counts[h.category] || 0) + 1;
+    });
+    return counts;
+  }, [habits]);
 
   // Identity Summaries aggregating votes per identity (including custom-defined identities)
   const identitySummaries = useMemo(() => {
@@ -316,7 +353,7 @@ export default function App() {
     const weeklyCompletionPct = totalPossibleWeek > 0 ? Math.round((totalCheckinsWeek / totalPossibleWeek) * 100) : 0;
 
     // Calculate overall daily streak accurately without magic numbers
-    const overallStreak = calculateOverallDailyStreak(habits);
+    const overallStreak = calculateOverallDailyStreak(habits, todayKey);
 
     const sortedByBest = [...enrichedHabits].sort((a, b) => {
       if (b.stats.completionRateThisWeek !== a.stats.completionRateThisWeek) {
@@ -336,7 +373,7 @@ export default function App() {
       bestHabit: sortedByBest[0] || null,
       dailyChartData
     };
-  }, [habits, weekDays, selectedDateStr, enrichedHabits]);
+  }, [habits, weekDays, selectedDateStr, enrichedHabits, todayKey]);
 
   // Day Completion Rates map for the 7-day strip
   const dayCompletionRates = useMemo(() => {
@@ -450,7 +487,12 @@ export default function App() {
           playUncheckTone(soundEnabled);
         }
 
-        return { ...h, completedDates: currentDates };
+        const updatedHabit: Habit = { ...h, completedDates: currentDates };
+        const updatedStats = calculateHabitStats(updatedHabit, weekDays, todayKey);
+        return {
+          ...updatedHabit,
+          bestStreakRecord: Math.max(h.bestStreakRecord || 1, updatedStats.longestStreak)
+        };
       })
     );
   };
@@ -600,12 +642,12 @@ export default function App() {
   };
 
   // Schedule notifications with Capacitor & sync per-habit times
-  const handleSaveNotifications = async () => {
+  const handleSaveNotifications = async (cfgToSave: NotificationConfig = notifications) => {
     try {
-      const success = await scheduleAllNotifications(notifications, habits);
+      const success = await scheduleAllNotifications(cfgToSave, habits);
       if (success) {
         showToast(
-          notifications.enabled
+          cfgToSave.enabled
             ? 'Notifications & per-habit alarms scheduled!'
             : 'Notifications disabled.'
         );
@@ -630,18 +672,18 @@ export default function App() {
       dateStr: selectedDateStr,
       displayDate: `${d.getMonth() + 1}/${d.getDate()}`,
       dayNumber: d.getDate(),
-      isToday: selectedDateStr === getTodayDateKey(),
-      isFuture: selectedDateStr > getTodayDateKey()
+      isToday: selectedDateStr === todayKey,
+      isFuture: selectedDateStr > todayKey
     };
-  }, [weekDays, selectedDateStr]);
+  }, [weekDays, selectedDateStr, todayKey]);
 
   const todayDateFormatted = useMemo(() => {
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric'
-    }).format(parseDateKey(getTodayDateKey()));
-  }, []);
+    }).format(parseDateKey(todayKey));
+  }, [todayKey]);
 
   return (
     <div
@@ -663,11 +705,7 @@ export default function App() {
         onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
         soundEnabled={soundEnabled}
         onToggleSound={() => {
-          setSoundEnabled((prev) => {
-            const next = !prev;
-            setNotifications((n) => ({ ...n, soundEnabled: next }));
-            return next;
-          });
+          setNotifications((n) => ({ ...n, soundEnabled: !(n.soundEnabled ?? true) }));
         }}
         onOpenAddModal={() => handleOpenAddModal(selectedCategory)}
         onOpenNotifModal={() => setIsNotifModalOpen(true)}
@@ -806,6 +844,7 @@ export default function App() {
             <HabitTable
               habits={filteredHabits}
               allHabitsCount={habits.length}
+              categoryCounts={categoryCounts}
               weekDays={weekDays}
               selectedDateStr={selectedDateStr}
               categories={CATEGORIES}
@@ -851,7 +890,10 @@ export default function App() {
         {activeTab === 'heatmap' && (
           <HeatmapTab
             habits={habits}
+            todayKey={todayKey}
             onSelectDate={(dateStr) => {
+              const targetOffset = getWeekOffsetForDate(dateStr, todayKey);
+              setWeekOffset(targetOffset);
               setSelectedDateStr(dateStr);
               setActiveTab('dashboard');
             }}
@@ -897,14 +939,16 @@ export default function App() {
         onClose={() => setIsBackupModalOpen(false)}
         habits={habits}
         journals={dailyJournals}
+        customIdentities={customIdentities}
+        deletedIdentities={deletedIdentities}
         onImportSuccess={(newHabits, newJournals, importedCustomIdentities, importedDeletedIdentities) => {
           setHabits(newHabits);
           setDailyJournals(newJournals);
-          if (importedCustomIdentities && importedCustomIdentities.length > 0) {
+          if (importedCustomIdentities !== undefined) {
             setCustomIdentities(importedCustomIdentities);
             saveCustomIdentitiesToStorage(importedCustomIdentities);
           }
-          if (importedDeletedIdentities) {
+          if (importedDeletedIdentities !== undefined) {
             setDeletedIdentities(importedDeletedIdentities);
             saveDeletedIdentitiesToStorage(importedDeletedIdentities);
           }

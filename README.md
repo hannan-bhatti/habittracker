@@ -1,6 +1,6 @@
 # 🎯 Habit Tracker — Atomic Daily Loops
 
-A modern, identity-based personal habit tracking application designed around proven behavioral psychology. Built with **React 18**, **TypeScript**, **Vite**, **Tailwind CSS**, and **Capacitor** for cross-platform Web & native Android mobile.
+A modern, identity-based personal habit tracking application designed around proven behavioral psychology. Built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS v4**, and **Capacitor** for cross-platform Web & native Android mobile.
 
 ---
 
@@ -35,8 +35,8 @@ A modern, identity-based personal habit tracking application designed around pro
 
 ## 🛠️ Technology Stack
 
-- **Core**: React 18, TypeScript, Vite
-- **Styling**: Tailwind CSS, Plus Jakarta Sans typography, Lucide Icons
+- **Core**: React 19, TypeScript 6, Vite 8
+- **Styling**: Tailwind CSS v4, Plus Jakarta Sans typography, Lucide Icons
 - **Mobile Engine**: Capacitor 8 (Android SDK 34 / API 35)
 - **Native Plugins**:
   - `@capacitor/local-notifications` (recurring scheduled alerts & high-importance channel)

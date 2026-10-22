@@ -87,6 +87,7 @@ export async function scheduleAllNotifications(
       schedule: {
         on: { hour: number; minute: number };
         repeats: boolean;
+        allowWhileIdle?: boolean;
       };
     }> = [];
 
@@ -99,7 +100,7 @@ export async function scheduleAllNotifications(
           title: 'Habit Tracker ☀️',
           body: 'A fresh day has begun! Check off your morning habits and build momentum.',
           channelId: 'habits-daily-channel',
-          schedule: { on: { hour: mH, minute: mM }, repeats: true }
+          schedule: { on: { hour: mH, minute: mM }, repeats: true, allowWhileIdle: true }
         });
       }
     }
@@ -113,7 +114,7 @@ export async function scheduleAllNotifications(
           title: 'Evening Reflection 🌙',
           body: 'Review your habit streaks and write your 1-sentence reflection.',
           channelId: 'habits-daily-channel',
-          schedule: { on: { hour: eH, minute: eM }, repeats: true }
+          schedule: { on: { hour: eH, minute: eM }, repeats: true, allowWhileIdle: true }
         });
       }
     }
@@ -146,7 +147,7 @@ export async function scheduleAllNotifications(
             title: `Starting in ${leadMinutes}m: ${habit.name} ⏳`,
             body: `Scheduled for ${habit.time}. ${detail}${locationText}`,
             channelId: 'habits-daily-channel',
-            schedule: { on: { hour: adv.hour, minute: adv.minute }, repeats: true }
+            schedule: { on: { hour: adv.hour, minute: adv.minute }, repeats: true, allowWhileIdle: true }
           });
         }
 
@@ -159,7 +160,7 @@ export async function scheduleAllNotifications(
             title: `Time for: ${habit.name} ⏰`,
             body: `${detail}${locationText}`,
             channelId: 'habits-daily-channel',
-            schedule: { on: { hour: hH, minute: hM }, repeats: true }
+            schedule: { on: { hour: hH, minute: hM }, repeats: true, allowWhileIdle: true }
           });
         }
       });

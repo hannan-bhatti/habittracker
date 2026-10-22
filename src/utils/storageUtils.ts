@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import type { Habit, NotificationConfig } from '../types/habit';
 import { formatDateKey, getTodayDateKey, getWeekDates } from './dateUtils';
@@ -474,34 +475,86 @@ export async function hydrateNativeStorage(): Promise<{
 }
 
 /**
- * Exports all user data as a JSON download file.
+ * Builds the serialized JSON backup string for all user data.
  */
-export function exportUserData(
+export function serializeBackupData(
   habits: Habit[],
   journals: Record<string, string>,
   customIdentities?: string[],
   deletedIdentities?: string[]
-) {
+): string {
   const data = {
     appName: 'HabitTracker',
     version: '2.0',
     exportedAt: new Date().toISOString(),
     habits,
     journals,
-    customIdentities: customIdentities || loadCustomIdentitiesFromStorage(),
-    deletedIdentities: deletedIdentities || loadDeletedIdentitiesFromStorage()
+    customIdentities: customIdentities ?? loadCustomIdentitiesFromStorage(),
+    deletedIdentities: deletedIdentities ?? loadDeletedIdentitiesFromStorage()
   };
 
-  const jsonStr = JSON.stringify(data, null, 2);
+  return JSON.stringify(data, null, 2);
+}
+
+/**
+ * Exports all user data as a JSON download file (or native share sheet / clipboard on Android).
+ */
+export async function exportUserData(
+  habits: Habit[],
+  journals: Record<string, string>,
+  customIdentities?: string[],
+  deletedIdentities?: string[]
+): Promise<'shared' | 'downloaded' | 'copied'> {
+  const jsonStr = serializeBackupData(habits, journals, customIdentities, deletedIdentities);
+  const fileName = `habit-tracker-backup-${formatDateKey(new Date())}.json`;
+
+  // On native mobile (Android WebView), <a download> with blob URLs is often ignored.
+  // Prefer Web Share API with file/text or fallback to download + clipboard copy.
+  if (Capacitor.isNativePlatform() && typeof navigator !== 'undefined') {
+    try {
+      const file = new File([jsonStr], fileName, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Habit Tracker Backup',
+          text: 'Habit Tracker JSON data backup',
+          files: [file]
+        });
+        return 'shared';
+      }
+      if (navigator.share) {
+        await navigator.share({
+          title: fileName,
+          text: jsonStr
+        });
+        return 'shared';
+      }
+    } catch (err) {
+      // If user dismissed share sheet (AbortError), don't throw; otherwise try clipboard/download
+      if (err instanceof Error && err.name === 'AbortError') {
+        return 'shared';
+      }
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(jsonStr);
+        return 'copied';
+      } catch {
+        // Continue to standard anchor fallback
+      }
+    }
+  }
+
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `habit-tracker-backup-${formatDateKey(new Date())}.json`;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  return 'downloaded';
 }
 
 /**

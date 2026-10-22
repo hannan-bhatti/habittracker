@@ -19,6 +19,7 @@ import { triggerHaptic } from '../utils/haptics';
 interface HabitTableProps {
   habits: EnrichedHabit[];
   allHabitsCount: number;
+  categoryCounts?: Record<string, number>;
   weekDays: DayInfo[];
   selectedDateStr: string;
   categories: CategoryInfo[];
@@ -37,6 +38,7 @@ interface HabitTableProps {
 export const HabitTable: React.FC<HabitTableProps> = ({
   habits,
   allHabitsCount,
+  categoryCounts,
   weekDays,
   selectedDateStr,
   categories,
@@ -75,7 +77,7 @@ export const HabitTable: React.FC<HabitTableProps> = ({
           </button>
           {categories.map((cat) => {
             const IconComp = cat.icon;
-            const count = habits.filter((h) => h.category === cat.id).length;
+            const count = categoryCounts ? (categoryCounts[cat.id] ?? 0) : habits.filter((h) => h.category === cat.id).length;
             const isActive = selectedCategory === cat.id;
             return (
               <button
@@ -232,7 +234,7 @@ export const HabitTable: React.FC<HabitTableProps> = ({
                                 {h.name}
                               </span>
                               {categoryInfo && (
-                                <span className={`px-2 py-0.2 rounded-full text-[10px] font-bold border shrink-0 ${categoryInfo.badgeClass}`}>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${categoryInfo.badgeClass}`}>
                                   {categoryInfo.label}
                                 </span>
                               )}

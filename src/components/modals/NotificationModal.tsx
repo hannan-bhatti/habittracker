@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, X, Volume2, Clock, Hourglass, Timer } from 'lucide-react';
 import type { Habit, NotificationConfig } from '../../types/habit';
 import { calculateAdvanceTime } from '../../utils/notificationUtils';
@@ -8,27 +9,52 @@ interface NotificationModalProps {
   onClose: () => void;
   config: NotificationConfig;
   onChangeConfig: (cfg: NotificationConfig) => void;
-  onSave: () => void;
+  onSave: (cfg: NotificationConfig) => void;
   habits?: Habit[];
 }
 
-export const NotificationModal: React.FC<NotificationModalProps> = ({
-  isOpen,
+interface NotificationModalContentProps {
+  onClose: () => void;
+  config: NotificationConfig;
+  onChangeConfig: (cfg: NotificationConfig) => void;
+  onSave: (cfg: NotificationConfig) => void;
+  habits: Habit[];
+}
+
+const NotificationModalContent: React.FC<NotificationModalContentProps> = ({
   onClose,
   config,
   onChangeConfig,
   onSave,
-  habits = []
+  habits
 }) => {
-  if (!isOpen) return null;
+  const [draftConfig, setDraftConfig] = useState<NotificationConfig>(config);
 
-  const habitRemindersActive = config.enabled && (config.habitRemindersEnabled !== false);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  const habitRemindersActive = draftConfig.enabled && (draftConfig.habitRemindersEnabled !== false);
   const scheduledHabits = habits.filter((h) => Boolean(h.time));
-  const leadMinutes = config.reminderLeadMinutes ?? 10;
-  const remindAtExact = config.remindAtExactTime ?? true;
+  const leadMinutes = draftConfig.reminderLeadMinutes ?? 10;
+  const remindAtExact = draftConfig.remindAtExactTime ?? true;
+
+  const handleSaveClick = () => {
+    onChangeConfig(draftConfig);
+    onSave(draftConfig);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+    >
       <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-slate-900 dark:text-slate-100 shadow-2xl animate-check-pop space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
@@ -39,6 +65,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             type="button"
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            aria-label="Close notification settings"
           >
             <X className="w-4 h-4" />
           </button>
@@ -53,8 +80,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             </div>
             <input
               type="checkbox"
-              checked={config.enabled}
-              onChange={(e) => onChangeConfig({ ...config, enabled: e.target.checked })}
+              checked={draftConfig.enabled}
+              onChange={(e) => setDraftConfig({ ...draftConfig, enabled: e.target.checked })}
               className="w-4 h-4 accent-teal-600 cursor-pointer"
             />
           </label>
@@ -75,10 +102,10 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               </div>
               <input
                 type="checkbox"
-                checked={config.habitRemindersEnabled !== false}
-                disabled={!config.enabled}
+                checked={draftConfig.habitRemindersEnabled !== false}
+                disabled={!draftConfig.enabled}
                 onChange={(e) =>
-                  onChangeConfig({ ...config, habitRemindersEnabled: e.target.checked })
+                  setDraftConfig({ ...draftConfig, habitRemindersEnabled: e.target.checked })
                 }
                 className="w-4 h-4 accent-teal-600 cursor-pointer shrink-0 ml-2"
               />
@@ -102,7 +129,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                   <select
                     value={leadMinutes}
                     onChange={(e) =>
-                      onChangeConfig({ ...config, reminderLeadMinutes: Number(e.target.value) })
+                      setDraftConfig({ ...draftConfig, reminderLeadMinutes: Number(e.target.value) })
                     }
                     className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/70 border border-teal-300 dark:border-teal-700 text-teal-900 dark:text-teal-200 outline-none cursor-pointer"
                   >
@@ -127,7 +154,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                       type="checkbox"
                       checked={remindAtExact}
                       onChange={(e) =>
-                        onChangeConfig({ ...config, remindAtExactTime: e.target.checked })
+                        setDraftConfig({ ...draftConfig, remindAtExactTime: e.target.checked })
                       }
                       className="w-3.5 h-3.5 accent-teal-600 cursor-pointer"
                     />
@@ -187,9 +214,9 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             </div>
             <input
               type="time"
-              value={config.morningTime}
-              disabled={!config.enabled}
-              onChange={(e) => onChangeConfig({ ...config, morningTime: e.target.value })}
+              value={draftConfig.morningTime}
+              disabled={!draftConfig.enabled}
+              onChange={(e) => setDraftConfig({ ...draftConfig, morningTime: e.target.value })}
               className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none"
             />
           </div>
@@ -202,9 +229,9 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             </div>
             <input
               type="time"
-              value={config.eveningTime}
-              disabled={!config.enabled}
-              onChange={(e) => onChangeConfig({ ...config, eveningTime: e.target.value })}
+              value={draftConfig.eveningTime}
+              disabled={!draftConfig.enabled}
+              onChange={(e) => setDraftConfig({ ...draftConfig, eveningTime: e.target.value })}
               className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none"
             />
           </div>
@@ -220,8 +247,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             </div>
             <input
               type="checkbox"
-              checked={config.soundEnabled}
-              onChange={(e) => onChangeConfig({ ...config, soundEnabled: e.target.checked })}
+              checked={draftConfig.soundEnabled}
+              onChange={(e) => setDraftConfig({ ...draftConfig, soundEnabled: e.target.checked })}
               className="w-4 h-4 accent-teal-600 cursor-pointer"
             />
           </label>
@@ -237,7 +264,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={onSave}
+            onClick={handleSaveClick}
             className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-sky-600 hover:from-teal-500 hover:to-sky-500 active:scale-95 transition-all cursor-pointer shadow-xs"
           >
             Save Preferences
@@ -245,5 +272,26 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
         </div>
       </div>
     </div>
+  );
+};
+
+export const NotificationModal: React.FC<NotificationModalProps> = ({
+  isOpen,
+  onClose,
+  config,
+  onChangeConfig,
+  onSave,
+  habits = []
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <NotificationModalContent
+      onClose={onClose}
+      config={config}
+      onChangeConfig={onChangeConfig}
+      onSave={onSave}
+      habits={habits}
+    />
   );
 };

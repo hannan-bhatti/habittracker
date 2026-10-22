@@ -125,7 +125,7 @@ export const WeekNavigator: React.FC<WeekNavigatorProps> = ({
               {/* "Today" Badge */}
               {d.isToday && (
                 <span
-                  className={`absolute -top-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-black tracking-tight uppercase ${
+                  className={`absolute -top-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-black tracking-tight uppercase ${
                     isSelected
                       ? 'bg-white text-teal-800 shadow-xs'
                       : 'bg-teal-600 text-white'

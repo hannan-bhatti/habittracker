@@ -1,8 +1,8 @@
 import type React from 'react';
-import { useRef, useState } from 'react';
-import { Database, Download, Upload, RotateCcw, X, AlertTriangle } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Database, Download, Upload, RotateCcw, X, AlertTriangle, Copy } from 'lucide-react';
 import type { Habit } from '../../types/habit';
-import { exportUserData, parseImportData } from '../../utils/storageUtils';
+import { exportUserData, serializeBackupData, parseImportData } from '../../utils/storageUtils';
 import { triggerHaptic } from '../../utils/haptics';
 
 interface BackupModalProps {
@@ -10,6 +10,8 @@ interface BackupModalProps {
   onClose: () => void;
   habits: Habit[];
   journals: Record<string, string>;
+  customIdentities?: string[];
+  deletedIdentities?: string[];
   onImportSuccess: (
     habits: Habit[],
     journals: Record<string, string>,
@@ -26,6 +28,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   onClose,
   habits,
   journals,
+  customIdentities,
+  deletedIdentities,
   onImportSuccess,
   onResetDefaults,
   onClearAllHabits,
@@ -36,12 +40,39 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     triggerHaptic('success');
-    exportUserData(habits, journals);
-    showToast('Data exported successfully! 📁');
+    const result = await exportUserData(habits, journals, customIdentities, deletedIdentities);
+    if (result === 'shared') {
+      showToast('Backup ready to save or share! 📁');
+    } else if (result === 'copied') {
+      showToast('Backup JSON copied to clipboard! 📋');
+    } else {
+      showToast('Data exported successfully! 📁');
+    }
+  };
+
+  const handleCopyJson = async () => {
+    try {
+      const jsonStr = serializeBackupData(habits, journals, customIdentities, deletedIdentities);
+      await navigator.clipboard.writeText(jsonStr);
+      triggerHaptic('success');
+      showToast('Backup JSON copied to clipboard! 📋');
+    } catch {
+      triggerHaptic('warning');
+      showToast('Could not copy to clipboard.');
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,7 +99,12 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+    >
       <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-slate-900 dark:text-slate-100 shadow-2xl animate-check-pop space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
@@ -79,6 +115,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             type="button"
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            aria-label="Close backup modal"
           >
             <X className="w-4 h-4" />
           </button>
@@ -92,17 +129,28 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                 Export Data Backup
               </span>
               <span className="text-[11px] text-slate-400">
-                Download all your habits, dates, and reflections to a JSON file.
+                Download, share, or copy all your habits, dates, and reflections.
               </span>
             </div>
-            <button
-              type="button"
-              onClick={handleExport}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyJson}
+                className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 active:scale-95 transition-all cursor-pointer"
+                title="Copy backup JSON to clipboard"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExport}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 active:scale-95 transition-all cursor-pointer shrink-0 shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export</span>
+              </button>
+            </div>
           </div>
 
           {/* Import JSON */}
@@ -151,11 +199,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      triggerHaptic('warning');
                       onClearAllHabits();
                       setConfirmClearAll(false);
                       onClose();
-                      showToast('All habits cleared.');
                     }}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-500 cursor-pointer"
                   >

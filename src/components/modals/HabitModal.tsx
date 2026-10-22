@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   X,
   Clock,
@@ -83,6 +83,14 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
 }) => {
   // 3-Step Wizard Navigation State
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   // Form Fields
   const [formName, setFormName] = useState(editingHabit ? editingHabit.name : '');
@@ -1105,7 +1113,12 @@ export const HabitModal: React.FC<HabitModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto"
+    >
       <HabitFormContent
         key={editingHabit ? editingHabit.id : `new-habit-form-${initialIdentity || 'empty'}`}
         editingHabit={editingHabit}

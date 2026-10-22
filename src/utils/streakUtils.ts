@@ -4,7 +4,11 @@ import { formatDateKey, parseDateKey, getTodayDateKey } from './dateUtils';
 /**
  * Calculates current and longest streaks, and total votes cast for a specific habit.
  */
-export function calculateHabitStats(habit: Habit, weekDays: DayInfo[]): HabitStats {
+export function calculateHabitStats(
+  habit: Habit,
+  weekDays: DayInfo[],
+  todayKey: string = getTodayDateKey()
+): HabitStats {
   const { completedDates = {}, targetPerWeek = 5, priorStreak = 0, bestStreakRecord = 0 } = habit;
 
   // Week-specific stats
@@ -12,11 +16,15 @@ export function calculateHabitStats(habit: Habit, weekDays: DayInfo[]): HabitSta
   const completionRateThisWeek = Math.round((completedThisWeek / 7) * 100);
   const isTargetMet = completedThisWeek >= targetPerWeek;
 
-  // Total lifetime votes cast for this habit's identity
-  const totalVotesCast = Object.values(completedDates).filter(Boolean).length;
+  // Active completed date keys sorted chronologically
+  const activeDateKeys = Object.keys(completedDates)
+    .filter((k) => Boolean(completedDates[k]))
+    .sort();
 
-  // Consecutive day streak calculation
-  const todayKey = getTodayDateKey();
+  // Total lifetime votes cast for this habit's identity
+  const totalVotesCast = activeDateKeys.length;
+
+  // Consecutive day streak calculation from today / yesterday
   const todayDate = parseDateKey(todayKey);
 
   let streak = 0;
@@ -54,8 +62,27 @@ export function calculateHabitStats(habit: Habit, weekDays: DayInfo[]): HabitSta
     }
   }
 
+  // Calculate maximum historical consecutive streak across all recorded dates
+  let maxHistoricalStreak = 0;
+  let currentRun = 0;
+  let prevDayEpoch: number | null = null;
+
+  for (const key of activeDateKeys) {
+    const d = parseDateKey(key);
+    const dayEpoch = Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    if (prevDayEpoch !== null && dayEpoch === prevDayEpoch + 1) {
+      currentRun++;
+    } else {
+      currentRun = 1;
+    }
+    if (currentRun > maxHistoricalStreak) {
+      maxHistoricalStreak = currentRun;
+    }
+    prevDayEpoch = dayEpoch;
+  }
+
   const totalCurrentStreak = streak > 0 ? streak + priorStreak : 0;
-  const longestStreak = Math.max(bestStreakRecord, totalCurrentStreak);
+  const longestStreak = Math.max(bestStreakRecord, totalCurrentStreak, maxHistoricalStreak);
 
   return {
     completedThisWeek,
@@ -70,10 +97,12 @@ export function calculateHabitStats(habit: Habit, weekDays: DayInfo[]): HabitSta
 /**
  * Calculates overall active daily streak across all habits without arbitrary magic numbers.
  */
-export function calculateOverallDailyStreak(habits: Habit[]): number {
+export function calculateOverallDailyStreak(
+  habits: Habit[],
+  todayKey: string = getTodayDateKey()
+): number {
   if (habits.length === 0) return 0;
 
-  const todayKey = getTodayDateKey();
   const todayDate = parseDateKey(todayKey);
 
   const isDaySuccessful = (dateKey: string): boolean => {

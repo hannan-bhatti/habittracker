@@ -56,7 +56,7 @@ export const BadgesTab: React.FC<BadgesTabProps> = ({ badges }) => {
                         {badge.title}
                       </h3>
                       {badge.isUnlocked ? (
-                        <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-400">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-400">
                           Unlocked
                         </span>
                       ) : (
