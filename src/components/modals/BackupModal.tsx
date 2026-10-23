@@ -234,8 +234,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({
 
             {/* Reset to Default Template */}
             {confirmReset ? (
-              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-2">
-                <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
+              <div className="p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-300 dark:border-teal-800 space-y-2">
+                <p className="text-xs font-bold text-teal-800 dark:text-teal-200">
                   Load the 6 starter template habits?
                 </p>
                 <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                       onClose();
                       showToast('Loaded starter habits template.');
                     }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white hover:bg-amber-500 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 text-white hover:bg-teal-500 cursor-pointer"
                   >
                     Yes, Load Templates
                   </button>
@@ -269,7 +269,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                     setConfirmReset(true);
                     setConfirmClearAll(false);
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 font-semibold cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Load starter template habits</span>

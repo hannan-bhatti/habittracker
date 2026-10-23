@@ -467,13 +467,13 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
             {/* Identity Alignment Section (Mandatory) */}
             <div className={`p-4 rounded-2xl border transition-all space-y-3 ${
               !formIdentity.trim()
-                ? 'border-amber-300 dark:border-amber-700/80 bg-amber-50/40 dark:bg-amber-950/20'
+                ? 'border-sky-300/80 dark:border-sky-800/80 bg-sky-50/30 dark:bg-sky-950/20'
                 : 'border-teal-300/80 dark:border-teal-800/80 bg-teal-50/30 dark:bg-teal-950/20'
             }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center shadow-2xs ${
-                    formIdentity.trim() ? 'bg-teal-600 text-white' : 'bg-amber-500 text-white'
+                    formIdentity.trim() ? 'bg-teal-600 text-white' : 'bg-sky-600 text-white'
                   }`}>
                     <UserCheck className="w-3.5 h-3.5" />
                   </div>
@@ -482,7 +482,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                       <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
                         Aligned Identity
                       </h4>
-                      <span className="text-[10px] font-bold text-rose-500 dark:text-rose-400">
+                      <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400">
                         * Mandatory
                       </span>
                     </div>
@@ -493,11 +493,11 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                 </div>
                 {formIdentity.trim() ? (
                   <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-100/70 dark:bg-teal-900/60 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800 flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5 text-amber-500" />
+                    <Sparkles className="w-2.5 h-2.5 text-teal-600 dark:text-teal-400" />
                     Aligned
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-900/60 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                  <span className="text-[10px] font-bold text-sky-700 dark:text-sky-300 bg-sky-100/70 dark:bg-sky-900/60 px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">
                     Required to Continue
                   </span>
                 )}
@@ -511,7 +511,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                       Active Selected Identity:
                     </span>
                     <p className="text-xs font-extrabold text-slate-900 dark:text-slate-100 truncate">
-                      &ldquo;I am {formIdentity.toLowerCase().startsWith('i am') ? formIdentity.slice(5) : formIdentity}&rdquo;
+                      &ldquo;{formIdentity}&rdquo;
                     </p>
                   </div>
                   <button
@@ -520,15 +520,15 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                       setFormIdentity('');
                       triggerHaptic('light');
                     }}
-                    className="text-[11px] font-bold text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                    className="text-[11px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
                   >
                     Clear / Change
                   </button>
                 </div>
               ) : (
-                <div className="p-2.5 rounded-xl bg-amber-100/60 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-2">
-                  <span className="text-base shrink-0">⚠️</span>
-                  <span>No identity selected yet. You must write your own or pick one below to create this habit.</span>
+                <div className="p-2.5 rounded-xl bg-sky-50/80 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-[11px] text-sky-800 dark:text-sky-300 font-medium flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                  <span>No identity selected yet. Write your own or pick one below to create this habit.</span>
                 </div>
               )}
 
@@ -596,7 +596,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                             }`}>
                               {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                             </span>
-                            <span className="text-xs truncate">&ldquo;I am {cid}&rdquo;</span>
+                            <span className="text-xs truncate">&ldquo;{cid}&rdquo;</span>
                           </div>
                           {onDeleteCustomIdentity && (
                             <button
@@ -666,7 +666,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                             }`}>
                               {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                             </span>
-                            <span className="truncate">&ldquo;I am {suggestion}&rdquo;</span>
+                            <span className="truncate">&ldquo;{suggestion}&rdquo;</span>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {isSelected && <Check className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />}
@@ -729,7 +729,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-1 mt-1">
                   <span className="text-[10px] text-slate-400">What exact time of day will you perform this?</span>
                   {formTime && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/60">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 px-2 py-0.5 rounded-md border border-teal-200/60 dark:border-teal-800/60">
                       <Hourglass className="w-2.5 h-2.5" />
                       10m reminder: {calculateAdvanceTime(formTime, 10).timeString}
                     </span>
@@ -999,7 +999,7 @@ const HabitFormContent: React.FC<HabitFormContentProps> = ({
               </div>
               <div className="text-xs space-y-1">
                 <p>
-                  <strong>Identity:</strong> <span className="italic text-teal-700 dark:text-teal-300">&ldquo;I am {formIdentity}&rdquo;</span>
+                  <strong>Identity:</strong> <span className="italic text-teal-700 dark:text-teal-300">&ldquo;{formIdentity}&rdquo;</span>
                 </p>
                 <p>
                   <strong>Routine:</strong> {selectedAnchorHabit ? `After ${selectedAnchorHabit.name}, I will ` : 'I will '}

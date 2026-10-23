@@ -181,7 +181,7 @@ const NotificationModalContent: React.FC<NotificationModalContentProps> = ({
                             <div className="flex items-center gap-1.5 shrink-0 text-[10px] font-bold">
                               {leadMinutes > 0 ? (
                                 <>
-                                  <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 text-amber-700 dark:text-amber-300">
+                                  <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800/70 text-sky-700 dark:text-sky-300">
                                     ⏳ {adv.timeString} ({leadMinutes}m before)
                                   </span>
                                   {remindAtExact && (

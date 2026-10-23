@@ -264,7 +264,7 @@ export const HabitTable: React.FC<HabitTableProps> = ({
                                 className="inline-flex items-center gap-1 text-[10px] text-teal-700 dark:text-teal-300 bg-teal-50/90 dark:bg-teal-950/50 border border-teal-200/70 dark:border-teal-800/70 rounded-md px-1.5 py-0.5 truncate max-w-[240px]"
                                 title={`Aligned Identity: "${h.identity}"`}
                               >
-                                <Sparkles className="w-2.5 h-2.5 shrink-0 text-amber-500" />
+                                <Sparkles className="w-2.5 h-2.5 shrink-0 text-teal-600 dark:text-teal-400" />
                                 <span className="truncate italic font-medium">&ldquo;{h.identity}&rdquo;</span>
                               </div>
                             )}

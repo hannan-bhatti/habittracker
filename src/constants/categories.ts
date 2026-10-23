@@ -48,7 +48,7 @@ export const CATEGORIES: CategoryInfo[] = [
     id: 'Personal',
     label: 'Personal',
     icon: Target,
-    badgeClass: 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
-    accent: '#7c3aed'
+    badgeClass: 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    accent: '#0284c7'
   }
 ];

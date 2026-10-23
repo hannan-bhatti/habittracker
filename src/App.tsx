@@ -241,7 +241,7 @@ export default function App() {
         particleCount: 50,
         spread: 60,
         origin: { y: 0.8 },
-        colors: ['#0d9488', '#0284c7', '#38bdf8', '#f59e0b']
+        colors: ['#0d9488', '#14b8a6', '#0284c7', '#38bdf8']
       });
     } catch {
       // Ignored

@@ -61,8 +61,8 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Current Streak
           </span>
-          <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/70 text-amber-500 flex items-center justify-center">
-            <Flame className="w-4 h-4 fill-amber-500/20" />
+          <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/70 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+            <Flame className="w-4 h-4 fill-teal-500/20" />
           </div>
         </div>
         <div className="mt-3">

@@ -116,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
             title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             aria-label="Toggle dark mode"
           >
-            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            {isDarkMode ? <Sun className="w-4 h-4 text-teal-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
 
           {/* Add Habit Primary CTA */}

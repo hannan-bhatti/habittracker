@@ -51,7 +51,7 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
 
           <div className="flex items-center gap-3 text-xs font-bold bg-white/5 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-white/10 w-fit">
             <span className="inline-flex items-center gap-1.5 text-teal-300">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 text-teal-300" />
               {totalLifetimeVotes} Total Votes
             </span>
             <span className="text-white/30">•</span>
@@ -133,9 +133,9 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
             {identities.map((item) => {
               const tierBadgeColor =
                 item.levelTier === 4
-                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
-                  : item.levelTier === 3
                   ? 'bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border-teal-300 dark:border-teal-700'
+                  : item.levelTier === 3
+                  ? 'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800'
                   : item.levelTier === 2
                   ? 'bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
@@ -153,7 +153,7 @@ export const IdentityTab: React.FC<IdentityTabProps> = ({
                           Identity Statement
                         </span>
                         <h4 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 leading-snug">
-                          &ldquo;I am {item.identity.toLowerCase().startsWith('i am') ? item.identity.slice(5) : item.identity}&rdquo;
+                          &ldquo;{item.identity}&rdquo;
                         </h4>
                       </div>
 
